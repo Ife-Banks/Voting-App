@@ -21,7 +21,7 @@ export default function LoginPage() {
       if (data?.user) {
         window.location.href = data.type === 'admin' ? '/admin/dashboard' : '/vote'
       }
-    })
+    }).catch(() => {})
   }, [])
 
   async function handleEmailSubmit(e: React.FormEvent) {

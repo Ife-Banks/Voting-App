@@ -23,7 +23,9 @@ export default function VotePage() {
   const supabase = createClient()
 
   useEffect(() => {
+    let cancelled = false
     async function init() {
+      try {
       // Check session via API
       const res = await fetch('/api/auth/me')
       if (!res.ok) { router.push('/login'); return }
@@ -61,8 +63,12 @@ export default function VotePage() {
         .from('positions').select('*, candidates(*)').order('display_order')
       if (posData) setPositions(posData)
       setLoading(false)
+    } catch {
+      if (!cancelled) { router.push('/login') }
+    }
     }
     init()
+    return () => { cancelled = true }
   }, [])
 
   function selectCandidate(positionId: string, candidateId: string) {
