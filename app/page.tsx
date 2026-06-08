@@ -13,12 +13,9 @@ export default async function RootPage() {
 
   // Fall back to Supabase Auth (admin)
   const supabase = await createServerSupabaseClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
-
-  const isAdmin = user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL
-  if (isAdmin) redirect('/admin/dashboard')
+  if (user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) redirect('/admin/dashboard')
   redirect('/vote')
 }

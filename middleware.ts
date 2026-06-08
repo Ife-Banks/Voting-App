@@ -3,49 +3,72 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { getSessionFromCookie } from '@/lib/session'
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value ?? null
-        },
-        getAll() { return request.cookies.getAll() },
-        setAll(cookiesToSet: { name: string; value: string; options: { path?: string; maxAge?: number; domain?: string; secure?: boolean; sameSite?: 'lax' | 'strict' | 'none' } }[]) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  // Check Supabase Auth session (admin)
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user ?? null
-
-  // Check custom student session
-  const studentSession = await getSessionFromCookie(request.cookies.toString())
-  const isLoggedIn = user || studentSession
-
   const path = request.nextUrl.pathname
 
-  // Public paths
-  if (path.startsWith('/login') || path.startsWith('/admin/login') || path.startsWith('/api')) {
+  // Public paths — always allow
+  if (path.startsWith('/login') || path.startsWith('/admin/login') || path.startsWith('/api') || path.startsWith('/_next')) {
+    return NextResponse.next()
+  }
+
+  // 1. Check custom student session cookie first
+  let studentSession = null
+  try {
+    studentSession = await getSessionFromCookie(request.headers.get('cookie'))
+  } catch {
+    // Session check failed — treat as logged out
+  }
+  if (studentSession) {
+    // Student is logged in — block admin routes
+    if (path.startsWith('/admin')) {
+      return NextResponse.redirect(new URL('/vote', request.url))
+    }
+    return NextResponse.next()
+  }
+
+  // 2. Only need Supabase Auth for admin pages (or vote page for admin redirect)
+  if (path.startsWith('/admin') || path.startsWith('/vote')) {
+    let supabaseResponse = NextResponse.next({ request })
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value ?? null
+          },
+          getAll() { return request.cookies.getAll() },
+          setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+            supabaseResponse = NextResponse.next({ request })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, { ...options, secure: false })
+            )
+          },
+        },
+      }
+    )
+
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    // Admin on vote page → redirect to dashboard
+    if (path.startsWith('/vote') && user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+    }
+
+    // Non-admin on admin page → redirect to vote
+    if (path.startsWith('/admin') && user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+      return NextResponse.redirect(new URL('/vote', request.url))
+    }
+
     return supabaseResponse
   }
 
-  // Not logged in → login
-  if (!isLoggedIn) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  return supabaseResponse
+  return NextResponse.next()
 }
 
 export const config = {

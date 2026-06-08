@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Shield, Vote, AlertCircle, Loader2, Mail, ArrowLeft } from 'lucide-react'
 
@@ -10,30 +9,36 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const router = useRouter()
   const supabase = createClient()
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
-        router.replace('/admin/dashboard')
-      }
-    })
-  }, [])
+  console.log('[AdminLogin] Page mounted, supabase client created')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    console.log('[AdminLogin] Submit clicked, email:', email)
     setLoading(true)
     setError('')
 
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-    if (authError) {
-      setError('Invalid email or password.')
-      setLoading(false)
-      return
-    }
+    try {
+      console.log('[AdminLogin] Calling signInWithPassword...')
+      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+      console.log('[AdminLogin] signInWithPassword result:', { data, authError })
 
-    router.replace('/admin/dashboard')
+      if (authError) {
+        console.log('[AdminLogin] Auth error:', authError.message)
+        setError('Invalid email or password.')
+        setLoading(false)
+        return
+      }
+
+      console.log('[AdminLogin] Login successful, session:', data?.session)
+      console.log('[AdminLogin] Redirecting to /admin/dashboard')
+      window.location.replace('/admin/dashboard')
+    } catch (err) {
+      console.error('[AdminLogin] Network/other error:', err)
+      setError('Connection error. Try again.')
+      setLoading(false)
+    }
   }
 
   return (

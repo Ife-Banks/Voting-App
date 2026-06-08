@@ -1,19 +1,28 @@
 -- ============================================================
--- SRC VOTING APP — SUPABASE SCHEMA
--- Run this in your Supabase SQL Editor
+-- SRC VOTING APP — FULL SETUP
+-- Run this entire file in your Supabase SQL Editor
 -- ============================================================
 
--- 1. Students (allowed voter emails)
-CREATE TABLE students (
+------------------------------------------------------
+-- 1. CLEAN UP OLD COLUMNS
+------------------------------------------------------
+ALTER TABLE students DROP COLUMN IF EXISTS has_logged_in;
+ALTER TABLE students DROP COLUMN IF EXISTS otp_code;
+ALTER TABLE students DROP COLUMN IF EXISTS otp_expires_at;
+ALTER TABLE students DROP COLUMN IF EXISTS otp_attempts;
+ALTER TABLE students DROP COLUMN IF EXISTS otp_created_at;
+
+------------------------------------------------------
+-- 2. CREATE TABLES (safe to re-run)
+------------------------------------------------------
+CREATE TABLE IF NOT EXISTS students (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
-  has_logged_in BOOLEAN DEFAULT FALSE,
   has_voted BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. Positions (e.g. President, VP, etc.)
-CREATE TABLE positions (
+CREATE TABLE IF NOT EXISTS positions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT,
@@ -21,8 +30,7 @@ CREATE TABLE positions (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Candidates
-CREATE TABLE candidates (
+CREATE TABLE IF NOT EXISTS candidates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   position_id UUID REFERENCES positions(id) ON DELETE CASCADE,
   full_name TEXT NOT NULL,
@@ -33,8 +41,7 @@ CREATE TABLE candidates (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. Votes (one row per student per position)
-CREATE TABLE votes (
+CREATE TABLE IF NOT EXISTS votes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_email TEXT NOT NULL,
   position_id UUID REFERENCES positions(id) ON DELETE CASCADE,
@@ -43,8 +50,7 @@ CREATE TABLE votes (
   UNIQUE(student_email, position_id)
 );
 
--- 5. Voting sessions (separate voting periods)
-CREATE TABLE voting_sessions (
+CREATE TABLE IF NOT EXISTS voting_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   is_active BOOLEAN DEFAULT FALSE,
@@ -52,9 +58,8 @@ CREATE TABLE voting_sessions (
   ended_at TIMESTAMPTZ
 );
 
--- 6. Election settings
-CREATE TABLE settings (
-  id INT PRIMARY KEY DEFAULT 1,
+CREATE TABLE IF NOT EXISTS settings (
+  id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   voting_open BOOLEAN DEFAULT FALSE,
   election_name TEXT DEFAULT 'SRC Elections',
   school_name TEXT DEFAULT 'Our School',
@@ -62,12 +67,12 @@ CREATE TABLE settings (
 );
 
 INSERT INTO settings (id, voting_open, election_name, school_name)
-VALUES (1, FALSE, 'SRC Elections 2025/2026', 'Federal Government College');
+VALUES (1, FALSE, 'SRC Elections 2025/2026', 'Abiola Ajimobi Technical University')
+ON CONFLICT (id) DO NOTHING;
 
--- ============================================================
--- ROW LEVEL SECURITY
--- ============================================================
-
+------------------------------------------------------
+-- 3. ENABLE ROW LEVEL SECURITY
+------------------------------------------------------
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE positions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
@@ -75,70 +80,82 @@ ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE voting_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 
--- Voting sessions: anyone can read, admin can manage
+------------------------------------------------------
+-- 4. DROP OLD POLICIES (safe re-run)
+------------------------------------------------------
+DROP POLICY IF EXISTS "sessions_read" ON voting_sessions;
+DROP POLICY IF EXISTS "sessions_admin_insert" ON voting_sessions;
+DROP POLICY IF EXISTS "sessions_admin_update" ON voting_sessions;
+DROP POLICY IF EXISTS "sessions_admin_delete" ON voting_sessions;
+DROP POLICY IF EXISTS "settings_read" ON settings;
+DROP POLICY IF EXISTS "settings_admin_update" ON settings;
+DROP POLICY IF EXISTS "positions_read" ON positions;
+DROP POLICY IF EXISTS "positions_admin_insert" ON positions;
+DROP POLICY IF EXISTS "positions_admin_update" ON positions;
+DROP POLICY IF EXISTS "positions_admin_delete" ON positions;
+DROP POLICY IF EXISTS "candidates_read" ON candidates;
+DROP POLICY IF EXISTS "candidates_admin_insert" ON candidates;
+DROP POLICY IF EXISTS "candidates_admin_update" ON candidates;
+DROP POLICY IF EXISTS "candidates_admin_delete" ON candidates;
+DROP POLICY IF EXISTS "students_read" ON students;
+DROP POLICY IF EXISTS "students_admin_insert" ON students;
+DROP POLICY IF EXISTS "students_admin_update" ON students;
+DROP POLICY IF EXISTS "students_admin_delete" ON students;
+DROP POLICY IF EXISTS "votes_service" ON votes;
+DROP POLICY IF EXISTS "votes_admin_read" ON votes;
+
+------------------------------------------------------
+-- 5. CREATE RLS POLICIES
+-- Replace 'ifeoluwa.bankole@tech-u.edu.ng' with YOUR admin email
+------------------------------------------------------
+-- Voting sessions
 CREATE POLICY "sessions_read" ON voting_sessions FOR SELECT USING (TRUE);
-CREATE POLICY "sessions_admin" ON voting_sessions FOR INSERT
+CREATE POLICY "sessions_admin_insert" ON voting_sessions FOR INSERT
   WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 CREATE POLICY "sessions_admin_update" ON voting_sessions FOR UPDATE
-  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng')
-  WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 CREATE POLICY "sessions_admin_delete" ON voting_sessions FOR DELETE
   USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 
--- Settings: anyone can read, admin can update
+-- Settings
 CREATE POLICY "settings_read" ON settings FOR SELECT USING (TRUE);
-CREATE POLICY "settings_admin" ON settings FOR UPDATE
-  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng')
-  WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+CREATE POLICY "settings_admin_update" ON settings FOR UPDATE
+  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 
--- Positions: anyone can read, admin can manage
+-- Positions
 CREATE POLICY "positions_read" ON positions FOR SELECT USING (TRUE);
-CREATE POLICY "positions_admin" ON positions FOR INSERT
+CREATE POLICY "positions_admin_insert" ON positions FOR INSERT
   WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 CREATE POLICY "positions_admin_update" ON positions FOR UPDATE
-  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng')
-  WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 CREATE POLICY "positions_admin_delete" ON positions FOR DELETE
   USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 
--- Candidates: anyone can read, admin can manage
+-- Candidates
 CREATE POLICY "candidates_read" ON candidates FOR SELECT USING (TRUE);
-CREATE POLICY "candidates_admin" ON candidates FOR INSERT
+CREATE POLICY "candidates_admin_insert" ON candidates FOR INSERT
   WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 CREATE POLICY "candidates_admin_update" ON candidates FOR UPDATE
-  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng')
-  WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 CREATE POLICY "candidates_admin_delete" ON candidates FOR DELETE
   USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 
--- Students: anyone can read (to check registration), admin can manage
+-- Students
 CREATE POLICY "students_read" ON students FOR SELECT USING (TRUE);
 CREATE POLICY "students_admin_insert" ON students FOR INSERT
   WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 CREATE POLICY "students_admin_update" ON students FOR UPDATE
-  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng')
-  WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 CREATE POLICY "students_admin_delete" ON students FOR DELETE
   USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 
--- Votes: service role only
-CREATE POLICY "votes_service" ON votes USING (TRUE);
+-- Votes
+CREATE POLICY "votes_admin_read" ON votes FOR SELECT
+  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 
--- ============================================================
--- STORAGE BUCKET for candidate photos
--- ============================================================
--- In Supabase Dashboard: Storage > New Bucket > "candidates" > Public bucket
-
--- ============================================================
--- MIGRATION for existing students table
--- Run this if students table already exists:
---   ALTER TABLE students ADD COLUMN has_logged_in BOOLEAN DEFAULT FALSE;
--- ============================================================
-
--- ============================================================
--- INCREMENT VOTE FUNCTION (called by the API)
--- ============================================================
-
+------------------------------------------------------
+-- 6. VOTE FUNCTION
+------------------------------------------------------
 CREATE OR REPLACE FUNCTION increment_vote(candidate_id UUID)
 RETURNS void AS $$
 BEGIN
@@ -148,9 +165,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- ============================================================
--- ADMIN USER SETUP
--- ============================================================
--- In Supabase Dashboard: Authentication > Users > Invite user
--- Use your admin email. The app detects admin by checking 
--- if the email matches NEXT_PUBLIC_ADMIN_EMAIL env variable.
+------------------------------------------------------
+-- 7. ADMIN SETUP (in Supabase Auth)
+------------------------------------------------------
+-- Go to Authentication > Users > Invite user
+-- Use: ifeoluwa.bankole@tech-u.edu.ng

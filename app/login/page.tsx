@@ -10,22 +10,36 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [settings, setSettings] = useState<{ election_name: string; school_name: string } | null>(null)
-  const router = useRouter()
   const supabase = createClient()
+  const router = useRouter()
 
   useEffect(() => {
     supabase.from('settings').select('election_name, school_name').single()
       .then(({ data }) => data && setSettings(data))
 
-    fetch('/api/auth/me').then(r => r.ok && r.json()).then(data => {
-      if (data?.user) {
-        window.location.href = data.type === 'admin' ? '/admin/dashboard' : '/vote'
-      }
-    }).catch(() => {})
+    const controller = new AbortController()
+
+    fetch('/api/auth/me', { signal: controller.signal })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.user) {
+          const dest = data.type === 'admin' ? '/admin/dashboard' : '/vote'
+          console.log('[Login] Already logged in, redirecting to:', dest)
+          router.replace(dest)
+        }
+      })
+      .catch(err => {
+        if (err.name !== 'AbortError') {
+          console.error('[Login] /api/auth/me fetch failed:', err)
+        }
+      })
+
+    return () => controller.abort()
   }, [])
 
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault()
+    console.log('[Login] Submitting email:', email)
     setLoading(true)
     setError('')
 
@@ -35,16 +49,21 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
+      console.log('[Login] /api/auth/login status:', res.status)
       const data = await res.json()
+      console.log('[Login] /api/auth/login response:', data)
 
       if (!res.ok) {
+        console.log('[Login] Login failed:', data.error)
         setError(data.error ?? 'Login failed')
         setLoading(false)
         return
       }
 
-      window.location.href = data.redirect ?? '/vote'
-    } catch {
+      console.log('[Login] Login success, redirecting to /vote')
+      window.location.replace('/vote')
+    } catch (err) {
+      console.error('[Login] Fetch threw error:', err)
       setError('Connection error. Try again.')
       setLoading(false)
     }

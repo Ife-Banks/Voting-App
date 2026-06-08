@@ -1,7 +1,6 @@
 export interface Student {
   id: string
   email: string
-  has_logged_in: boolean
   has_voted: boolean
   created_at: string
 }

@@ -7,10 +7,14 @@ const COOKIE_NAME = 'student_session'
 const MAX_AGE = 60 * 60 * 24
 
 async function getSecret(): Promise<CryptoKey> {
+  const secret = process.env.SESSION_SECRET
+  if (!secret || secret.length < 16) {
+    throw new Error('SESSION_SECRET env variable is missing or too short')
+  }
   const enc = new TextEncoder()
   return crypto.subtle.importKey(
     'raw',
-    enc.encode(process.env.SESSION_SECRET!),
+    enc.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign', 'verify']
@@ -56,11 +60,15 @@ export function clearSessionCookie(): string {
 
 export async function getSessionFromCookie(cookieHeader: string | null): Promise<SessionData | null> {
   if (!cookieHeader) return null
-  for (const part of cookieHeader.split(';')) {
-    const [name, ...rest] = part.trim().split('=')
-    if (name === COOKIE_NAME) {
-      return verify(rest.join('='))
+  try {
+    for (const part of cookieHeader.split(';')) {
+      const [name, ...rest] = part.trim().split('=')
+      if (name === COOKIE_NAME) {
+        return await verify(rest.join('='))
+      }
     }
+  } catch (err) {
+    console.error('[session] getSessionFromCookie failed:', err)
   }
   return null
 }

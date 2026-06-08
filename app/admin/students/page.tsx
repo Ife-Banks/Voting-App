@@ -154,14 +154,13 @@ export default function StudentsPage() {
             <thead>
               <tr className="border-b" style={{ borderColor: 'rgba(201,168,76,0.1)' }}>
                 <th className="text-left px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Email</th>
-                <th className="text-center px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Logged In</th>
-                <th className="text-center px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Voted</th>
+                <th className="text-center px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Status</th>
                 <th className="text-right px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={4} className="text-center py-12 text-sm" style={{ color: 'rgba(245,240,232,0.25)' }}>
+                <tr><td colSpan={3} className="text-center py-12 text-sm" style={{ color: 'rgba(245,240,232,0.25)' }}>
                   {search ? 'No students match your search' : 'No students added yet'}
                 </td></tr>
               )}
@@ -173,17 +172,10 @@ export default function StudentsPage() {
                     <p className="text-sm" style={{ color: '#F5F0E8' }}>{student.email}</p>
                   </td>
                   <td className="px-6 py-3.5 text-center">
-                    <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${student.has_logged_in ? 'badge-open' : 'badge-closed'}`}>
-                      {student.has_logged_in
-                        ? <><CheckCircle2 size={11} /> Yes</>
-                        : <><Circle size={11} /> No</>}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3.5 text-center">
                     <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${student.has_voted ? 'badge-open' : 'badge-closed'}`}>
                       {student.has_voted
-                        ? <><CheckCircle2 size={11} /> Yes</>
-                        : <><Circle size={11} /> No</>}
+                        ? <><CheckCircle2 size={11} /> Voted</>
+                        : <><Circle size={11} /> Pending</>}
                     </span>
                   </td>
                   <td className="px-6 py-3.5 text-right">
