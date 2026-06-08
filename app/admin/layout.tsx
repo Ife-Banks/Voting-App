@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import {
   LayoutDashboard, Users, Award, BarChart2,
-  LogOut, Vote, Settings, ChevronRight, Calendar
+  LogOut, Vote, ChevronRight, Calendar
 } from 'lucide-react'
 
 const navItems = [
@@ -22,9 +22,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
+  const isLoginPage = pathname === '/admin/login'
 
   useEffect(() => {
-    if (pathname === '/admin/login') return
+    if (isLoginPage) return
     async function check() {
       const { data: { session } } = await supabase.auth.getSession()
       const user = session?.user
@@ -43,12 +44,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push('/login')
   }
 
+  if (isLoginPage) return <>{children}</>
+
   return (
     <div className="min-h-screen flex">
-      {/* Sidebar */}
       <aside className="w-64 shrink-0 flex flex-col border-r"
         style={{ borderColor: 'rgba(201,168,76,0.12)', background: 'rgba(10,10,15,0.95)' }}>
-        {/* Brand */}
         <div className="px-6 py-6 border-b" style={{ borderColor: 'rgba(201,168,76,0.12)' }}>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -62,7 +63,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-1">
           {navItems.map(({ href, icon: Icon, label }) => {
             const active = pathname === href || (href !== '/admin/dashboard' && pathname.startsWith(href))
@@ -78,7 +78,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        {/* Logout */}
         <div className="px-3 pb-6">
           <button onClick={logout}
             className="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 text-sm"
@@ -88,7 +87,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* Main */}
       <main className="flex-1 overflow-auto">
         {children}
       </main>

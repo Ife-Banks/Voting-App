@@ -3,7 +3,13 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { createSessionCookie } from '@/lib/session'
 
 export async function POST(req: NextRequest) {
-  const { email } = await req.json()
+  let email: string
+  try {
+    const body = await req.json()
+    email = body.email
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
   if (!email) {
     return NextResponse.json({ error: 'Email is required' }, { status: 400 })
   }
