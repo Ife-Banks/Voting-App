@@ -1,0 +1,208 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  font-family: var(--font-body);
+  background: #0A0A0F;
+  color: #F5F0E8;
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0A0A0F; }
+::-webkit-scrollbar-thumb { background: #C9A84C44; border-radius: 3px; }
+
+/* Gold shimmer text */
+.gold-text {
+  background: linear-gradient(135deg, #C9A84C, #E8C97A, #9B7A2E, #E8C97A);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: goldShimmer 4s ease infinite;
+}
+
+@keyframes goldShimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Staggered animation delays */
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+.delay-5 { animation-delay: 0.5s; }
+.delay-6 { animation-delay: 0.6s; }
+
+/* Card glass effect */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(201, 168, 76, 0.15);
+  backdrop-filter: blur(12px);
+}
+
+.glass-card:hover {
+  border-color: rgba(201, 168, 76, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Emerald card */
+.emerald-card {
+  background: linear-gradient(135deg, rgba(26, 74, 58, 0.6), rgba(45, 107, 84, 0.3));
+  border: 1px solid rgba(61, 138, 108, 0.3);
+}
+
+/* Gold button */
+.btn-gold {
+  background: linear-gradient(135deg, #C9A84C, #E8C97A);
+  color: #0A0A0F;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-gold:hover {
+  background: linear-gradient(135deg, #E8C97A, #C9A84C);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(201, 168, 76, 0.35);
+}
+
+.btn-gold:active { transform: translateY(0); }
+
+/* Ghost button */
+.btn-ghost {
+  border: 1px solid rgba(201, 168, 76, 0.4);
+  color: #C9A84C;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost:hover {
+  background: rgba(201, 168, 76, 0.1);
+  border-color: #C9A84C;
+}
+
+/* Input */
+.input-field {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  color: #F5F0E8;
+  transition: border-color 0.2s;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: rgba(201, 168, 76, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.input-field::placeholder { color: rgba(245, 240, 232, 0.35); }
+
+/* Candidate card selected */
+.candidate-card {
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 2px solid transparent;
+  position: relative;
+}
+
+.candidate-card:hover {
+  border-color: rgba(201, 168, 76, 0.4);
+  transform: translateY(-3px);
+}
+
+.candidate-card.selected {
+  border-color: #C9A84C;
+  background: rgba(201, 168, 76, 0.08);
+}
+
+.candidate-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  background: #C9A84C;
+  color: #0A0A0F;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 28px;
+  text-align: center;
+}
+
+/* Noise texture overlay */
+.noise::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Sidebar */
+.sidebar-item {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  border-left: 2px solid transparent;
+}
+
+.sidebar-item:hover {
+  background: rgba(201, 168, 76, 0.08);
+  border-left-color: rgba(201, 168, 76, 0.4);
+}
+
+.sidebar-item.active {
+  background: rgba(201, 168, 76, 0.12);
+  border-left-color: #C9A84C;
+  color: #C9A84C;
+}
+
+/* Badge */
+.badge-open {
+  background: rgba(61, 138, 108, 0.2);
+  border: 1px solid rgba(61, 138, 108, 0.5);
+  color: #5DBE9C;
+}
+
+.badge-closed {
+  background: rgba(192, 57, 43, 0.15);
+  border: 1px solid rgba(192, 57, 43, 0.4);
+  color: #E74C3C;
+}
+
+/* Step indicator */
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(201, 168, 76, 0.25);
+  transition: all 0.3s ease;
+}
+
+.step-dot.active {
+  background: #C9A84C;
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.6);
+}
+
+.step-dot.done {
+  background: #3D8A6C;
+}
