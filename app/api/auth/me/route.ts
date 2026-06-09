@@ -20,13 +20,15 @@ export async function GET(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
+          getAll() {
             const cookie = req.headers.get('cookie') ?? ''
-            const match = cookie.match(new RegExp(`(^|;)\\s*${name}\\s*=\\s*([^;]+)`))
-            return match?.[2] ?? null
+            if (!cookie) return []
+            return cookie.split(';').map(pair => {
+              const [name, ...rest] = pair.trim().split('=')
+              return { name, value: rest.join('=') }
+            })
           },
-          getAll() { return [] },
-          setAll() {},
+          setAll(_cookiesToSet: { name: string; value: string; options: any }[], _headers: Record<string, string>) {},
         },
       }
     )

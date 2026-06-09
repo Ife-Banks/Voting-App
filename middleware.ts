@@ -44,15 +44,15 @@ export async function middleware(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value ?? null
-          },
           getAll() { return request.cookies.getAll() },
-          setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+          setAll(cookiesToSet: { name: string; value: string; options: any }[], headers: Record<string, string>) {
             cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
             supabaseResponse = NextResponse.next({ request })
             cookiesToSet.forEach(({ name, value, options }) =>
               supabaseResponse.cookies.set(name, value, { ...options, secure: isProduction })
+            )
+            Object.entries(headers).forEach(([key, value]) =>
+              supabaseResponse.headers.set(key, value)
             )
           },
         },
