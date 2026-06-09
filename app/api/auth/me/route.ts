@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { getSessionFromCookie } from '@/lib/session'
+import { logAuth } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   try {
@@ -32,13 +33,14 @@ export async function GET(req: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
+    if (!user || !user.email) {
       return NextResponse.json({ user: null }, { status: 401 })
     }
 
     const isAdmin = user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL
+    logAuth('me', user.email, isAdmin ? 'admin' : 'student-user')
     return NextResponse.json({
-      user: { email: user.email!, id: user.id },
+      user: { email: user.email, id: user.id },
       type: isAdmin ? 'admin' : 'student',
     })
   } catch (err) {

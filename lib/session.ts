@@ -1,15 +1,18 @@
 export interface SessionData {
   email: string
   id: string
+  exp: number
 }
 
 const COOKIE_NAME = 'student_session'
 const MAX_AGE = 60 * 60 * 24
 
+const isProduction = process.env.NODE_ENV === 'production'
+
 async function getSecret(): Promise<CryptoKey> {
   const secret = process.env.SESSION_SECRET
-  if (!secret || secret.length < 16) {
-    throw new Error('SESSION_SECRET env variable is missing or too short')
+  if (!secret || secret.length < 32) {
+    throw new Error('SESSION_SECRET must be at least 32 characters')
   }
   const enc = new TextEncoder()
   return crypto.subtle.importKey(
@@ -43,19 +46,29 @@ async function verify(token: string): Promise<SessionData | null> {
     for (let i = 0; i < sigStr.length; i++) sig[i] = sigStr.charCodeAt(i)
     const valid = await crypto.subtle.verify('HMAC', secret, sig, new TextEncoder().encode(payload))
     if (!valid) return null
-    return JSON.parse(atob(payload))
+    const data: SessionData = JSON.parse(atob(payload))
+    if (Date.now() > data.exp) return null
+    return data
   } catch {
     return null
   }
 }
 
+function secureFlag(): string {
+  return isProduction ? ' Secure;' : ''
+}
+
 export async function createSessionCookie(data: SessionData): Promise<string> {
   const token = await sign(data)
-  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${MAX_AGE}`
+  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${MAX_AGE}${secureFlag()}`
 }
 
 export function clearSessionCookie(): string {
-  return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
+  return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secureFlag()}`
+}
+
+export function getCookieExpiry(): number {
+  return Date.now() + MAX_AGE * 1000
 }
 
 export async function getSessionFromCookie(cookieHeader: string | null): Promise<SessionData | null> {

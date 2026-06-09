@@ -9,33 +9,34 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [attempts, setAttempts] = useState(0)
   const supabase = createClient()
-
-  console.log('[AdminLogin] Page mounted, supabase client created')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    console.log('[AdminLogin] Submit clicked, email:', email)
+
+    if (attempts >= 5) {
+      setError('Too many attempts. Please wait before trying again.')
+      return
+    }
+
     setLoading(true)
     setError('')
 
     try {
-      console.log('[AdminLogin] Calling signInWithPassword...')
       const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
-      console.log('[AdminLogin] signInWithPassword result:', { data, authError })
 
       if (authError) {
-        console.log('[AdminLogin] Auth error:', authError.message)
+        setAttempts(prev => prev + 1)
         setError('Invalid email or password.')
         setLoading(false)
         return
       }
 
-      console.log('[AdminLogin] Login successful, session:', data?.session)
-      console.log('[AdminLogin] Redirecting to /admin/dashboard')
+      setAttempts(0)
       window.location.replace('/admin/dashboard')
     } catch (err) {
-      console.error('[AdminLogin] Network/other error:', err)
+      setAttempts(prev => prev + 1)
       setError('Connection error. Try again.')
       setLoading(false)
     }

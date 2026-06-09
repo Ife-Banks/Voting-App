@@ -330,6 +330,14 @@ function CandidateForm({ positionId, candidate, onSave, onCancel }: {
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be under 5MB')
+      return
+    }
+    if (!file.type.startsWith('image/')) {
+      alert('Only image files are allowed')
+      return
+    }
     const url = URL.createObjectURL(file)
     setCropSrc(url)
   }
