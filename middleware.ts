@@ -4,11 +4,29 @@ import { getSessionFromCookie } from '@/lib/session'
 
 const isProduction = process.env.NODE_ENV === 'production'
 
+function buildCSP(): string {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+  const host = url ? new URL(url).host : '*.supabase.co'
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    `img-src 'self' data: blob: https://${host}`,
+    "font-src 'self' data:",
+    `connect-src 'self' https://${host} wss://${host}`,
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join('; ')
+}
+
 function addSecurityHeaders(response: NextResponse) {
+  response.headers.set('Content-Security-Policy', buildCSP())
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-XSS-Protection', '0')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  response.headers.set('Cross-Origin-Resource-Policy', 'same-origin')
   return response
 }
 
