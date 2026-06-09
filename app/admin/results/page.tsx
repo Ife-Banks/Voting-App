@@ -50,10 +50,10 @@ export default function ResultsPage() {
   )
 
   return (
-    <div className="p-8">
-      <div className="flex items-start justify-between mb-8">
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-display font-bold gold-text mb-1">Election Results</h1>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold gold-text mb-1">Election Results</h1>
           <p className="text-sm" style={{ color: 'rgba(245,240,232,0.45)' }}>
             {totalVoted} of {totalVoters} students voted ({totalVoters > 0 ? Math.round((totalVoted / totalVoters) * 100) : 0}% turnout)
           </p>

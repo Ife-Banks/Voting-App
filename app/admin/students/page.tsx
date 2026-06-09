@@ -75,10 +75,10 @@ export default function StudentsPage() {
   const votedCount = students.filter(s => s.has_voted).length
 
   return (
-    <div className="p-8">
-      <div className="flex items-start justify-between mb-8">
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-display font-bold gold-text mb-1">Students</h1>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold gold-text mb-1">Students</h1>
           <p className="text-sm" style={{ color: 'rgba(245,240,232,0.45)' }}>
             {students.length} registered · {votedCount} voted · {students.length - votedCount} pending
           </p>
@@ -150,6 +150,7 @@ export default function StudentsPage() {
         <div className="flex justify-center py-16"><Loader2 className="animate-spin" style={{ color: '#C9A84C' }} /></div>
       ) : (
         <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b" style={{ borderColor: 'rgba(201,168,76,0.1)' }}>
@@ -196,6 +197,7 @@ export default function StudentsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

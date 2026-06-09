@@ -77,10 +77,10 @@ export default function SessionsPage() {
   )
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-display font-bold gold-text mb-1">Voting Sessions</h1>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold gold-text mb-1">Voting Sessions</h1>
           <p className="text-sm" style={{ color: 'rgba(245,240,232,0.45)' }}>Manage voting periods</p>
         </div>
       </div>
@@ -109,6 +109,7 @@ export default function SessionsPage() {
             <p className="text-sm" style={{ color: 'rgba(245,240,232,0.25)' }}>No sessions yet</p>
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b" style={{ borderColor: 'rgba(201,168,76,0.1)' }}>
@@ -163,6 +164,7 @@ export default function SessionsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

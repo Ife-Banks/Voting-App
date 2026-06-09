@@ -62,9 +62,9 @@ export default function AdminDashboard() {
   )
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-display font-bold gold-text mb-1">Dashboard</h1>
+    <div>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-display font-bold gold-text mb-1">Dashboard</h1>
         <p className="text-sm" style={{ color: 'rgba(245,240,232,0.45)' }}>Election overview and controls</p>
       </div>
 
