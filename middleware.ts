@@ -27,6 +27,9 @@ function addSecurityHeaders(response: NextResponse) {
   response.headers.set('X-XSS-Protection', '0')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   response.headers.set('Cross-Origin-Resource-Policy', 'same-origin')
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin')
+  response.headers.set('Cross-Origin-Embedder-Policy', 'credentialless')
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()')
   return response
 }
 
