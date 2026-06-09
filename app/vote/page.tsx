@@ -252,7 +252,7 @@ export default function VotePage() {
                       style={{ background: 'linear-gradient(135deg, #1A4A3A, #0A0A0F)' }}>
                       {candidate.photo_url ? (
                         <Image src={candidate.photo_url} alt={candidate.full_name}
-                          fill className="object-cover" />
+                          fill className="object-cover object-top" />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <User size={64} style={{ color: 'rgba(201,168,76,0.3)' }} />

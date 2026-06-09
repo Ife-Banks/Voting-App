@@ -105,11 +105,11 @@ export default function ResultsPage() {
                   return (
                     <div key={candidate.id} className="flex items-center gap-4">
                       {/* Photo */}
-                      <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0"
+                      <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0"
                         style={{ background: 'linear-gradient(135deg, #1A4A3A, #0A0A0F)' }}>
                         {candidate.photo_url ? (
                           <img src={candidate.photo_url} alt={candidate.full_name}
-                            className="w-full h-full object-cover" />
+                            className="w-full h-full object-cover object-top" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <User size={20} style={{ color: 'rgba(201,168,76,0.3)' }} />

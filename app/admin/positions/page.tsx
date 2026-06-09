@@ -3,9 +3,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import type { Position, Candidate } from '@/lib/types'
+import Cropper from 'react-easy-crop'
+import 'react-easy-crop/react-easy-crop.css'
+import type { Area, Point } from 'react-easy-crop'
 import {
   Plus, Trash2, ChevronDown, ChevronUp, Edit2,
-  Upload, X, Save, Loader2, User, GripVertical
+  Upload, X, Save, Loader2, User, GripVertical, Crop
 } from 'lucide-react'
 
 export default function PositionsPage() {
@@ -137,6 +140,7 @@ function PositionCard({
   const [title, setTitle] = useState(position.title)
   const [desc, setDesc] = useState(position.description ?? '')
   const [showCandidateForm, setShowCandidateForm] = useState(false)
+  const [editingCandidateId, setEditingCandidateId] = useState<string | null>(null)
   const supabase = createClient()
 
   async function savePosition() {
@@ -224,31 +228,49 @@ function PositionCard({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {(position.candidates ?? []).map(candidate => (
-                <div key={candidate.id} className="glass-card rounded-xl overflow-hidden">
-                  <div className="h-32 relative" style={{ background: 'linear-gradient(135deg, #1A4A3A22, #0A0A0F)' }}>
-                    {candidate.photo_url ? (
-                      <img src={candidate.photo_url} alt={candidate.full_name}
-                        className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <User size={40} style={{ color: 'rgba(201,168,76,0.2)' }} />
+                editingCandidateId === candidate.id ? (
+                  <CandidateForm key={candidate.id}
+                    positionId={position.id}
+                    candidate={candidate}
+                    onSave={(updated) => {
+                      setEditingCandidateId(null)
+                      onUpdateCandidates((position.candidates ?? []).map(c => c.id === updated.id ? updated : c))
+                    }}
+                    onCancel={() => setEditingCandidateId(null)} />
+                ) : (
+                  <div key={candidate.id} className="glass-card rounded-xl overflow-hidden">
+                    <div className="h-40 relative" style={{ background: 'linear-gradient(135deg, #1A4A3A22, #0A0A0F)' }}>
+                      {candidate.photo_url ? (
+                        <img src={candidate.photo_url} alt={candidate.full_name}
+                          className="w-full h-full object-cover object-top" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <User size={40} style={{ color: 'rgba(201,168,76,0.2)' }} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-display font-semibold text-sm" style={{ color: '#F5F0E8' }}>
+                          {candidate.full_name}
+                        </p>
+                        <button onClick={() => setEditingCandidateId(candidate.id)}
+                          className="p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0"
+                          style={{ color: '#C9A84C' }}>
+                          <Edit2 size={12} />
+                        </button>
                       </div>
-                    )}
+                      {candidate.class && (
+                        <p className="text-xs" style={{ color: '#C9A84C' }}>{candidate.class}</p>
+                      )}
+                      <button onClick={() => deleteCandidate(candidate.id)}
+                        className="mt-2 text-xs flex items-center gap-1 hover:text-red-400 transition-colors"
+                        style={{ color: 'rgba(245,240,232,0.3)' }}>
+                        <Trash2 size={11} /> Remove
+                      </button>
+                    </div>
                   </div>
-                  <div className="p-3">
-                    <p className="font-display font-semibold text-sm mb-0.5" style={{ color: '#F5F0E8' }}>
-                      {candidate.full_name}
-                    </p>
-                    {candidate.class && (
-                      <p className="text-xs" style={{ color: '#C9A84C' }}>{candidate.class}</p>
-                    )}
-                    <button onClick={() => deleteCandidate(candidate.id)}
-                      className="mt-2 text-xs flex items-center gap-1 hover:text-red-400 transition-colors"
-                      style={{ color: 'rgba(245,240,232,0.3)' }}>
-                      <Trash2 size={11} /> Remove
-                    </button>
-                  </div>
-                </div>
+                )
               ))}
             </div>
 
@@ -264,37 +286,76 @@ function PositionCard({
   )
 }
 
-function CandidateForm({ positionId, onSave, onCancel }: {
+function createImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.addEventListener('load', () => resolve(img))
+    img.addEventListener('error', reject)
+    img.src = url
+  })
+}
+
+async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+  const image = await createImage(imageSrc)
+  const canvas = document.createElement('canvas')
+  canvas.width = pixelCrop.width
+  canvas.height = pixelCrop.height
+  const ctx = canvas.getContext('2d')!
+  ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height)
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Canvas empty')), 'image/jpeg', 0.9)
+  })
+}
+
+function CandidateForm({ positionId, candidate, onSave, onCancel }: {
   positionId: string
+  candidate?: Candidate
   onSave: (c: Candidate) => void
   onCancel: () => void
 }) {
-  const [name, setName] = useState('')
-  const [cls, setCls] = useState('')
-  const [manifesto, setManifesto] = useState('')
+  const isEditing = !!candidate
+  const [name, setName] = useState(candidate?.full_name ?? '')
+  const [cls, setCls] = useState(candidate?.class ?? '')
+  const [manifesto, setManifesto] = useState(candidate?.manifesto ?? '')
   const [photo, setPhoto] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
+  const [preview, setPreview] = useState<string | null>(candidate?.photo_url ?? null)
   const [saving, setSaving] = useState(false)
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setPhoto(file)
     const url = URL.createObjectURL(file)
-    setPreview(url)
+    setCropSrc(url)
+  }
+
+  function onCropComplete(_: Area, croppedPixels: Area) {
+    setCroppedAreaPixels(croppedPixels)
+  }
+
+  async function confirmCrop() {
+    if (!cropSrc || !croppedAreaPixels) return
+    const blob = await getCroppedBlob(cropSrc, croppedAreaPixels)
+    const file = new File([blob], 'candidate.jpg', { type: 'image/jpeg' })
+    setPhoto(file)
+    setPreview(URL.createObjectURL(blob))
+    setCropSrc(null)
   }
 
   async function save() {
     if (!name.trim()) return
     setSaving(true)
 
-    let photo_url: string | null = null
+    let photo_url: string | null = candidate?.photo_url ?? null
 
     if (photo) {
-      const ext = photo.name.split('.').pop()
-      const path = `candidates/${Date.now()}.${ext}`
+      const ext = 'jpg'
+      const path = `${Date.now()}.${ext}`
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('candidates').upload(path, photo, { upsert: true })
       if (!uploadError && uploadData) {
@@ -303,65 +364,109 @@ function CandidateForm({ positionId, onSave, onCancel }: {
       }
     }
 
-    const { data } = await supabase.from('candidates').insert({
-      position_id: positionId, full_name: name, class: cls, manifesto, photo_url
-    }).select().single()
-
-    if (data) onSave(data)
+    if (isEditing) {
+      const { data } = await supabase.from('candidates')
+        .update({ full_name: name, class: cls, manifesto, photo_url })
+        .eq('id', candidate!.id).select().single()
+      if (data) onSave(data)
+    } else {
+      const { data } = await supabase.from('candidates').insert({
+        position_id: positionId, full_name: name, class: cls, manifesto, photo_url
+      }).select().single()
+      if (data) onSave(data)
+    }
     setSaving(false)
   }
 
   return (
-    <div className="emerald-card rounded-xl p-4 mb-4">
-      <h5 className="text-sm font-semibold mb-3" style={{ color: '#F5F0E8' }}>New Candidate</h5>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-        <input value={name} onChange={e => setName(e.target.value)}
-          className="input-field px-3 py-2.5 rounded-lg text-sm" placeholder="Full Name *" />
-        <input value={cls} onChange={e => setCls(e.target.value)}
-          className="input-field px-3 py-2.5 rounded-lg text-sm" placeholder="Class / Year (e.g. SS3A)" />
-      </div>
-      <textarea value={manifesto} onChange={e => setManifesto(e.target.value)}
-        className="input-field w-full px-3 py-2.5 rounded-lg text-sm resize-none mb-3"
-        rows={2} placeholder="Manifesto / Campaign statement (optional)" />
-
-      {/* Photo upload */}
-      <div className="flex items-center gap-3 mb-4">
-        {preview ? (
-          <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
-            <img src={preview} alt="preview" className="w-full h-full object-cover" />
-            <button onClick={() => { setPhoto(null); setPreview(null) }}
-              className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center"
-              style={{ background: 'rgba(10,10,15,0.8)' }}>
-              <X size={10} style={{ color: '#F5F0E8' }} />
-            </button>
+    <>
+      {/* Crop dialog */}
+      {cropSrc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.85)' }}>
+          <div className="w-full max-w-lg mx-4 glass-card rounded-2xl overflow-hidden">
+            <div className="p-4 border-b" style={{ borderColor: 'rgba(201,168,76,0.15)' }}>
+              <h4 className="font-display font-semibold" style={{ color: '#F5F0E8' }}>Crop Photo</h4>
+            </div>
+            <div className="relative" style={{ height: 350 }}>
+              <Cropper
+                image={cropSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={3 / 4}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+            <div className="p-4 flex items-center justify-between">
+              <input type="range" min={1} max={3} step={0.1} value={zoom}
+                onChange={e => setZoom(Number(e.target.value))}
+                className="w-32 accent-yellow-600" />
+              <div className="flex gap-2">
+                <button onClick={() => setCropSrc(null)}
+                  className="btn-ghost px-5 py-2 rounded-xl text-xs">Cancel</button>
+                <button onClick={confirmCrop}
+                  className="btn-gold px-5 py-2 rounded-xl text-xs flex items-center gap-1.5">
+                  <Crop size={12} /> Apply
+                </button>
+              </div>
+            </div>
           </div>
-        ) : (
-          <button onClick={() => fileRef.current?.click()}
-            className="w-16 h-16 rounded-xl border-2 border-dashed flex items-center justify-center shrink-0 transition-colors hover:border-yellow-600"
-            style={{ borderColor: 'rgba(201,168,76,0.3)' }}>
-            <Upload size={20} style={{ color: 'rgba(201,168,76,0.5)' }} />
+        </div>
+      )}
+
+      <div className="emerald-card rounded-xl p-4 mb-4">
+        <h5 className="text-sm font-semibold mb-3" style={{ color: '#F5F0E8' }}>{isEditing ? 'Edit Candidate' : 'New Candidate'}</h5>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <input value={name} onChange={e => setName(e.target.value)}
+            className="input-field px-3 py-2.5 rounded-lg text-sm" placeholder="Full Name *" />
+          <input value={cls} onChange={e => setCls(e.target.value)}
+            className="input-field px-3 py-2.5 rounded-lg text-sm" placeholder="Class / Year (e.g. SS3A)" />
+        </div>
+        <textarea value={manifesto} onChange={e => setManifesto(e.target.value)}
+          className="input-field w-full px-3 py-2.5 rounded-lg text-sm resize-none mb-3"
+          rows={2} placeholder="Manifesto / Campaign statement (optional)" />
+
+        {/* Photo upload */}
+        <div className="flex items-center gap-3 mb-4">
+          {preview ? (
+            <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">
+              <img src={preview} alt="preview" className="w-full h-full object-cover" />
+              <button onClick={() => { setPhoto(null); setPreview(null) }}
+                className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(10,10,15,0.8)' }}>
+                <X size={10} style={{ color: '#F5F0E8' }} />
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => fileRef.current?.click()}
+              className="w-16 h-16 rounded-xl border-2 border-dashed flex items-center justify-center shrink-0 transition-colors hover:border-yellow-600"
+              style={{ borderColor: 'rgba(201,168,76,0.3)' }}>
+              <Upload size={20} style={{ color: 'rgba(201,168,76,0.5)' }} />
+            </button>
+          )}
+          <div>
+            <p className="text-xs font-medium mb-0.5" style={{ color: 'rgba(245,240,232,0.7)' }}>
+              Candidate Photo
+            </p>
+            <button onClick={() => fileRef.current?.click()}
+              className="text-xs" style={{ color: '#C9A84C' }}>
+              {preview ? 'Change photo' : 'Upload photo'}
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <button onClick={save} disabled={saving}
+            className="btn-gold px-5 py-2 rounded-xl text-xs flex items-center gap-1.5">
+            {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+            {isEditing ? 'Save Changes' : 'Add Candidate'}
           </button>
-        )}
-        <div>
-          <p className="text-xs font-medium mb-0.5" style={{ color: 'rgba(245,240,232,0.7)' }}>
-            Candidate Photo
-          </p>
-          <button onClick={() => fileRef.current?.click()}
-            className="text-xs" style={{ color: '#C9A84C' }}>
-            {preview ? 'Change photo' : 'Upload photo'}
-          </button>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
+          <button onClick={onCancel} className="btn-ghost px-5 py-2 rounded-xl text-xs">Cancel</button>
         </div>
       </div>
-
-      <div className="flex gap-2">
-        <button onClick={save} disabled={saving}
-          className="btn-gold px-5 py-2 rounded-xl text-xs flex items-center gap-1.5">
-          {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-          Add Candidate
-        </button>
-        <button onClick={onCancel} className="btn-ghost px-5 py-2 rounded-xl text-xs">Cancel</button>
-      </div>
-    </div>
+    </>
   )
 }
