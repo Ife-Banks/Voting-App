@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import type { Position } from '@/lib/types'
-import { useAdminProfile } from '@/app/admin/layout'
+import { useAdminProfile } from '@/lib/admin-context'
 import { Download, Trophy, Loader2, User, Image } from 'lucide-react'
 import { toPng } from 'html-to-image'
 

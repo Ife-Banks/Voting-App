@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Users, Award, Vote, ToggleLeft, ToggleRight, Loader2, TrendingUp, Calendar, Square } from 'lucide-react'
 import type { Settings, VotingSession } from '@/lib/types'
-import { useAdminProfile } from '@/app/admin/layout'
+import { useAdminProfile } from '@/lib/admin-context'
 
 export default function AdminDashboard() {
   const { profile } = useAdminProfile()

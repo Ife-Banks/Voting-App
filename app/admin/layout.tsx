@@ -1,25 +1,15 @@
 'use client'
 
-import { useEffect, useState, createContext, useContext } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import type { AdminProfile, AdminPermissions } from '@/lib/types'
+import { AdminContext } from '@/lib/admin-context'
+import type { AdminProfile } from '@/lib/types'
 import {
   LayoutDashboard, Users, Award, BarChart2,
   LogOut, Vote, ChevronRight, Calendar, Menu, X, Shield
 } from 'lucide-react'
-
-interface AdminCtx {
-  profile: AdminProfile | null
-  loading: boolean
-}
-
-const AdminContext = createContext<AdminCtx>({ profile: null, loading: true })
-
-export function useAdminProfile() {
-  return useContext(AdminContext)
-}
 
 const baseNavItems = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
