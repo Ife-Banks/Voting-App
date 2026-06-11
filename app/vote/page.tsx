@@ -20,9 +20,9 @@ export default function VotePage() {
   const [electionName, setElectionName] = useState('SRC Elections')
   const [alreadyVoted, setAlreadyVoted] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
+    const supabase = createClient()
     let cancelled = false
     async function init() {
       try {

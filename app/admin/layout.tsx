@@ -37,11 +37,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [profileLoading, setProfileLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
-  const supabase = createClient()
   const isLoginPage = pathname === '/admin/login'
   const isSetupPage = pathname.startsWith('/admin/setup')
 
   useEffect(() => {
+    const supabase = createClient()
     if (isLoginPage || isSetupPage) return
     async function check() {
       try {
@@ -104,6 +104,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   async function logout() {
+    const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
   }

@@ -19,11 +19,11 @@ export default function PositionsPage() {
   const [newPositionDesc, setNewPositionDesc] = useState('')
   const [addingPosition, setAddingPosition] = useState(false)
   const [showNewPosition, setShowNewPosition] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => { load() }, [])
 
   async function load() {
+    const supabase = createClient()
     const { data } = await supabase
       .from('positions').select('*, candidates(*)').order('display_order')
     if (data) setPositions(data)
@@ -33,6 +33,7 @@ export default function PositionsPage() {
   async function addPosition() {
     if (!newPositionTitle.trim()) return
     setAddingPosition(true)
+    const supabase = createClient()
     const { data } = await supabase.from('positions').insert({
       title: newPositionTitle, description: newPositionDesc,
       display_order: positions.length
@@ -46,6 +47,7 @@ export default function PositionsPage() {
 
   async function deletePosition(id: string) {
     if (!confirm('Delete this position and all its candidates?')) return
+    const supabase = createClient()
     await supabase.from('positions').delete().eq('id', id)
     setPositions(prev => prev.filter(p => p.id !== id))
   }
@@ -141,9 +143,9 @@ function PositionCard({
   const [desc, setDesc] = useState(position.description ?? '')
   const [showCandidateForm, setShowCandidateForm] = useState(false)
   const [editingCandidateId, setEditingCandidateId] = useState<string | null>(null)
-  const supabase = createClient()
 
   async function savePosition() {
+    const supabase = createClient()
     await supabase.from('positions').update({ title, description: desc }).eq('id', position.id)
     onUpdatePosition({ title, description: desc })
     setEditing(false)
@@ -151,6 +153,7 @@ function PositionCard({
 
   async function deleteCandidate(candidateId: string) {
     if (!confirm('Remove this candidate?')) return
+    const supabase = createClient()
     await supabase.from('candidates').delete().eq('id', candidateId)
     onUpdateCandidates((position.candidates ?? []).filter(c => c.id !== candidateId))
   }
@@ -325,7 +328,6 @@ function CandidateForm({ positionId, candidate, onSave, onCancel }: {
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
-  const supabase = createClient()
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -358,6 +360,7 @@ function CandidateForm({ positionId, candidate, onSave, onCancel }: {
   async function save() {
     if (!name.trim()) return
     setSaving(true)
+    const supabase = createClient()
 
     let photo_url: string | null = candidate?.photo_url ?? null
 

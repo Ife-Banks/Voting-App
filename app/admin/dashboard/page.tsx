@@ -18,11 +18,11 @@ export default function AdminDashboard() {
   const [editingName, setEditingName] = useState(false)
   const [electionName, setElectionName] = useState('')
   const [schoolName, setSchoolName] = useState('')
-  const supabase = createClient()
 
   useEffect(() => { load() }, [])
 
   async function load() {
+    const supabase = createClient()
     const [{ data: s }, { data: students }, { data: positions }, { data: candidates }, { data: sessions }] = await Promise.all([
       supabase.from('settings').select('*').single(),
       supabase.from('students').select('id, has_voted'),
@@ -44,6 +44,7 @@ export default function AdminDashboard() {
   async function toggleVoting() {
     if (!settings) return
     setToggling(true)
+    const supabase = createClient()
     const { data } = await supabase
       .from('settings').update({ voting_open: !settings.voting_open }).eq('id', 1).select().single()
     if (data) setSettings(data)
@@ -51,6 +52,7 @@ export default function AdminDashboard() {
   }
 
   async function saveSettings() {
+    const supabase = createClient()
     await supabase.from('settings').update({ election_name: electionName, school_name: schoolName }).eq('id', 1)
     setSettings(prev => prev ? { ...prev, election_name: electionName, school_name: schoolName } : null)
     setEditingName(false)
@@ -110,6 +112,7 @@ export default function AdminDashboard() {
               {isSuperAdmin && (
                 <button onClick={async () => {
                   setEndingSession(true)
+                  const supabase = createClient()
                   await supabase.from('voting_sessions')
                     .update({ is_active: false, ended_at: new Date().toISOString() })
                     .eq('id', activeSession.id)

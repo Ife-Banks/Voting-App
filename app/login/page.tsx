@@ -10,10 +10,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [settings, setSettings] = useState<{ election_name: string; school_name: string } | null>(null)
-  const supabase = createClient()
   const router = useRouter()
 
   useEffect(() => {
+    const supabase = createClient()
     supabase.from('settings').select('election_name, school_name').single()
       .then(({ data }) => data && setSettings(data))
 

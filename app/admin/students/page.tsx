@@ -14,11 +14,11 @@ export default function StudentsPage() {
   const [bulkText, setBulkText] = useState('')
   const [showBulk, setShowBulk] = useState(false)
   const [bulkLoading, setBulkLoading] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => { load() }, [])
 
   async function load() {
+    const supabase = createClient()
     const { data } = await supabase.from('students').select('*').order('email')
     if (data) setStudents(data)
     setLoading(false)
@@ -28,6 +28,7 @@ export default function StudentsPage() {
     const email = newEmail.trim().toLowerCase()
     if (!email) return
     setAdding(true)
+    const supabase = createClient()
     const { data, error } = await supabase.from('students').insert({ email }).select().single()
     if (data) { setStudents(prev => [...prev, data].sort((a, b) => a.email.localeCompare(b.email))); setNewEmail('') }
     else if (error) alert('Email already exists or invalid.')
@@ -37,12 +38,14 @@ export default function StudentsPage() {
   async function deleteStudent(id: string, hasVoted: boolean) {
     if (hasVoted && !confirm('This student has already voted. Remove them anyway?')) return
     if (!hasVoted && !confirm('Remove this student?')) return
+    const supabase = createClient()
     await supabase.from('students').delete().eq('id', id)
     setStudents(prev => prev.filter(s => s.id !== id))
   }
 
   async function resetVote(id: string, email: string) {
     if (!confirm(`Reset vote for ${email}? They will be able to vote again.`)) return
+    const supabase = createClient()
     await supabase.from('students').update({ has_voted: false }).eq('id', id)
     await supabase.from('votes').delete().eq('student_email', email)
     setStudents(prev => prev.map(s => s.id === id ? { ...s, has_voted: false } : s))
@@ -52,6 +55,7 @@ export default function StudentsPage() {
     const emails = bulkText.split('\n').map(e => e.trim().toLowerCase()).filter(e => e && e.includes('@'))
     if (!emails.length) { alert('No valid emails found.'); return }
     setBulkLoading(true)
+    const supabase = createClient()
     const rows = emails.map(email => ({ email }))
     const { data, error } = await supabase.from('students').upsert(rows, { onConflict: 'email' }).select()
     if (data) {

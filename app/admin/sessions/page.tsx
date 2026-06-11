@@ -11,11 +11,11 @@ export default function SessionsPage() {
   const [creating, setCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [actionLoading, setActionLoading] = useState<string | null>(null)
-  const supabase = createClient()
 
   useEffect(() => { load() }, [])
 
   async function load() {
+    const supabase = createClient()
     const { data } = await supabase.from('voting_sessions').select('*').order('created_at', { ascending: false })
     if (data) setSessions(data)
     setLoading(false)
@@ -24,6 +24,7 @@ export default function SessionsPage() {
   async function createSession() {
     if (!newTitle.trim()) return
     setCreating(true)
+    const supabase = createClient()
 
     // Deactivate any active session, then create the new one as active
     await supabase.from('voting_sessions').update({ is_active: false }).eq('is_active', true)
@@ -46,6 +47,7 @@ export default function SessionsPage() {
 
   async function endSession(session: VotingSession) {
     setActionLoading(session.id)
+    const supabase = createClient()
     await supabase
       .from('voting_sessions')
       .update({ is_active: false, ended_at: new Date().toISOString() })
@@ -58,6 +60,7 @@ export default function SessionsPage() {
 
   async function activateSession(session: VotingSession) {
     setActionLoading(session.id)
+    const supabase = createClient()
     // Deactivate all, then activate this one
     await supabase.from('voting_sessions').update({ is_active: false }).neq('id', session.id)
     await supabase

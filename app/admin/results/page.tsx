@@ -16,11 +16,11 @@ export default function ResultsPage() {
   const [totalVoted, setTotalVoted] = useState(0)
   const [downloadingImage, setDownloadingImage] = useState(false)
   const resultsRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
 
   useEffect(() => { load() }, [])
 
   async function load() {
+    const supabase = createClient()
     const [{ data: pos }, { data: students }] = await Promise.all([
       supabase.from('positions').select('*, candidates(*) ').order('display_order'),
       supabase.from('students').select('id, has_voted'),

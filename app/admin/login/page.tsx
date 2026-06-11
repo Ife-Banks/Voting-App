@@ -10,9 +10,9 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [attempts, setAttempts] = useState(0)
-  const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
+    const supabase = createClient()
     e.preventDefault()
 
     if (attempts >= 5) {
