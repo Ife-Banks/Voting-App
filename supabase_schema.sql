@@ -154,7 +154,42 @@ CREATE POLICY "votes_admin_read" ON votes FOR SELECT
   USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 
 ------------------------------------------------------
--- 6. VOTE FUNCTION
+-- 6. ADMIN PROFILES
+------------------------------------------------------
+CREATE TABLE IF NOT EXISTS admin_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID UNIQUE,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('super_admin', 'admin')),
+  permissions JSONB DEFAULT '{"view_results": true, "view_positions": true}',
+  created_by TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE admin_profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "admin_profiles_select" ON admin_profiles;
+DROP POLICY IF EXISTS "admin_profiles_insert" ON admin_profiles;
+DROP POLICY IF EXISTS "admin_profiles_delete" ON admin_profiles;
+
+CREATE POLICY "admin_profiles_select" ON admin_profiles FOR SELECT
+  USING (auth.email() = email OR
+         auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+
+CREATE POLICY "admin_profiles_insert" ON admin_profiles FOR INSERT
+  WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+
+CREATE POLICY "admin_profiles_delete" ON admin_profiles FOR DELETE
+  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+
+INSERT INTO admin_profiles (email, name, role, permissions)
+VALUES ('ifeoluwa.bankole@tech-u.edu.ng', 'Super Admin', 'super_admin',
+  '{"view_results": true, "view_positions": true}')
+ON CONFLICT (email) DO NOTHING;
+
+------------------------------------------------------
+-- 7. VOTE FUNCTION
 ------------------------------------------------------
 CREATE OR REPLACE FUNCTION increment_vote(candidate_id UUID)
 RETURNS void AS $$

@@ -4,8 +4,11 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Users, Award, Vote, ToggleLeft, ToggleRight, Loader2, TrendingUp, Calendar, Square } from 'lucide-react'
 import type { Settings, VotingSession } from '@/lib/types'
+import { useAdminProfile } from '@/app/admin/layout'
 
 export default function AdminDashboard() {
+  const { profile } = useAdminProfile()
+  const isSuperAdmin = profile?.role === 'super_admin'
   const [settings, setSettings] = useState<Settings | null>(null)
   const [activeSession, setActiveSession] = useState<VotingSession | null>(null)
   const [stats, setStats] = useState({ students: 0, voted: 0, positions: 0, candidates: 0 })
@@ -104,19 +107,21 @@ export default function AdminDashboard() {
                   </p>
                 </div>
               </div>
-              <button onClick={async () => {
-                setEndingSession(true)
-                await supabase.from('voting_sessions')
-                  .update({ is_active: false, ended_at: new Date().toISOString() })
-                  .eq('id', activeSession.id)
-                setActiveSession(null)
-                setEndingSession(false)
-              }} disabled={endingSession}
-                className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
-                style={{ background: 'rgba(192,57,43,0.15)', border: '1px solid rgba(192,57,43,0.3)', color: '#E74C3C' }}>
-                {endingSession ? <Loader2 size={16} className="animate-spin" /> : <Square size={16} />}
-                End Session
-              </button>
+              {isSuperAdmin && (
+                <button onClick={async () => {
+                  setEndingSession(true)
+                  await supabase.from('voting_sessions')
+                    .update({ is_active: false, ended_at: new Date().toISOString() })
+                    .eq('id', activeSession.id)
+                  setActiveSession(null)
+                  setEndingSession(false)
+                }} disabled={endingSession}
+                  className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+                  style={{ background: 'rgba(192,57,43,0.15)', border: '1px solid rgba(192,57,43,0.3)', color: '#E74C3C' }}>
+                  {endingSession ? <Loader2 size={16} className="animate-spin" /> : <Square size={16} />}
+                  End Session
+                </button>
+              )}
             </>
           ) : (
             <div className="text-center py-8">
@@ -146,11 +151,13 @@ export default function AdminDashboard() {
             </span>
           </div>
 
-          <button onClick={toggleVoting} disabled={toggling}
-            className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${settings?.voting_open ? 'bg-red-900/30 border border-red-700/50 text-red-400 hover:bg-red-900/50' : 'btn-gold'}`}>
-            {toggling ? <Loader2 size={16} className="animate-spin" /> :
-              settings?.voting_open ? <><ToggleLeft size={18} /> Close Voting</> : <><ToggleRight size={18} /> Open Voting</>}
-          </button>
+          {isSuperAdmin && (
+            <button onClick={toggleVoting} disabled={toggling}
+              className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${settings?.voting_open ? 'bg-red-900/30 border border-red-700/50 text-red-400 hover:bg-red-900/50' : 'btn-gold'}`}>
+              {toggling ? <Loader2 size={16} className="animate-spin" /> :
+                settings?.voting_open ? <><ToggleLeft size={18} /> Close Voting</> : <><ToggleRight size={18} /> Open Voting</>}
+            </button>
+          )}
         </div>
 
         {/* Turnout */}
@@ -171,12 +178,12 @@ export default function AdminDashboard() {
         </div>
 
         {/* Election settings */}
-        <div className="glass-card rounded-2xl p-6 lg:col-span-2">
+          <div className="glass-card rounded-2xl p-6 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-display font-semibold" style={{ color: '#F5F0E8' }}>
               Election Settings
             </h2>
-            {!editingName && (
+            {!editingName && isSuperAdmin && (
               <button onClick={() => setEditingName(true)} className="btn-ghost px-4 py-2 rounded-lg text-xs">
                 Edit
               </button>

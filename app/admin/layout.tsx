@@ -1,15 +1,27 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, createContext, useContext } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
+import type { AdminProfile, AdminPermissions } from '@/lib/types'
 import {
   LayoutDashboard, Users, Award, BarChart2,
-  LogOut, Vote, ChevronRight, Calendar, Menu, X
+  LogOut, Vote, ChevronRight, Calendar, Menu, X, Shield
 } from 'lucide-react'
 
-const navItems = [
+interface AdminCtx {
+  profile: AdminProfile | null
+  loading: boolean
+}
+
+const AdminContext = createContext<AdminCtx>({ profile: null, loading: true })
+
+export function useAdminProfile() {
+  return useContext(AdminContext)
+}
+
+const baseNavItems = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/admin/sessions', icon: Calendar, label: 'Sessions' },
   { href: '/admin/positions', icon: Award, label: 'Positions & Candidates' },
@@ -21,22 +33,56 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [electionName, setElectionName] = useState('SRC Elections')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
   const isLoginPage = pathname === '/admin/login'
+  const isSetupPage = pathname.startsWith('/admin/setup')
 
   useEffect(() => {
-    if (isLoginPage) return
+    if (isLoginPage || isSetupPage) return
     async function check() {
-      const { data: { session } } = await supabase.auth.getSession()
-      const user = session?.user
-      if (!user || user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const user = session?.user
+        if (!user) { router.push('/admin/login'); return }
+
+        const { data: profile, error: profileErr } = await supabase
+          .from('admin_profiles')
+          .select('*')
+          .eq('email', user.email)
+          .maybeSingle()
+
+        if (profileErr) {
+          // Table doesn't exist yet — fall back to super admin for the configured admin
+          if (user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+            setAdminProfile({
+              id: '', user_id: user.id, email: user.email!,
+              name: user.email!.split('@')[0],
+              role: 'super_admin',
+              permissions: { view_results: true, view_positions: true },
+              created_at: new Date().toISOString(),
+            })
+          } else {
+            router.push('/admin/login')
+            return
+          }
+        } else if (!profile) {
+          router.push('/admin/login')
+          return
+        } else {
+          setAdminProfile(profile)
+        }
+
+        const { data: settingsData } = await supabase.from('settings').select('election_name').single()
+        if (settingsData) setElectionName(settingsData.election_name)
+      } catch {
         router.push('/admin/login')
-        return
+      } finally {
+        setProfileLoading(false)
       }
-      const { data } = await supabase.from('settings').select('election_name').single()
-      if (data) setElectionName(data.election_name)
     }
     check()
   }, [pathname])
@@ -45,12 +91,39 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setSidebarOpen(false)
   }, [pathname])
 
+  // Build nav items based on role/permissions
+  const navItems = baseNavItems.filter(item => {
+    if (item.href === '/admin/students' || item.href === '/admin/sessions') {
+      return adminProfile?.role === 'super_admin'
+    }
+    return true
+  })
+
+  if (adminProfile?.role === 'super_admin') {
+    navItems.push({ href: '/admin/admins', icon: Shield, label: 'Admins' })
+  }
+
   async function logout() {
     await supabase.auth.signOut()
     router.push('/login')
   }
 
-  if (isLoginPage) return <>{children}</>
+  // Redirect non-super-admins away from restricted pages
+  const restrictedPaths = ['/admin/students', '/admin/sessions', '/admin/admins']
+  if (adminProfile && adminProfile.role !== 'super_admin' && restrictedPaths.some(p => pathname.startsWith(p))) {
+    router.push('/admin/dashboard')
+    return null
+  }
+
+  if (isLoginPage || isSetupPage) return <>{children}</>
+
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0A0A0F' }}>
+        <div className="animate-spin w-8 h-8 border-2 border-[#C9A84C] border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
 
   const sidebarContent = (
     <>
@@ -179,7 +252,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <div className="flex-1 p-4 sm:p-6 lg:p-8">
-          {children}
+          <AdminContext.Provider value={{ profile: adminProfile, loading: profileLoading }}>
+            {children}
+          </AdminContext.Provider>
         </div>
       </main>
     </div>

@@ -1,15 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import type { Position } from '@/lib/types'
-import { Download, Trophy, Loader2, User } from 'lucide-react'
+import { useAdminProfile } from '@/app/admin/layout'
+import { Download, Trophy, Loader2, User, Image } from 'lucide-react'
+import { toPng } from 'html-to-image'
 
 export default function ResultsPage() {
+  const { profile } = useAdminProfile()
+  const isSuperAdmin = profile?.role === 'super_admin'
   const [positions, setPositions] = useState<Position[]>([])
   const [loading, setLoading] = useState(true)
   const [totalVoters, setTotalVoters] = useState(0)
   const [totalVoted, setTotalVoted] = useState(0)
+  const [downloadingImage, setDownloadingImage] = useState(false)
+  const resultsRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
   useEffect(() => { load() }, [])
@@ -43,11 +49,31 @@ export default function ResultsPage() {
     a.click()
   }
 
+  async function exportImage() {
+    if (!resultsRef.current) return
+    setDownloadingImage(true)
+    try {
+      const dataUrl = await toPng(resultsRef.current, {
+        backgroundColor: '#0A0A0F',
+        pixelRatio: 2,
+      })
+      const a = document.createElement('a')
+      a.href = dataUrl
+      a.download = 'election-results.png'
+      a.click()
+    } catch (err) {
+      console.error('Failed to generate image:', err)
+    }
+    setDownloadingImage(false)
+  }
+
   if (loading) return (
     <div className="flex items-center justify-center h-full">
       <Loader2 className="animate-spin" style={{ color: '#C9A84C' }} />
     </div>
   )
+
+  const electionName = '' // Will be set from settings if needed
 
   return (
     <div>
@@ -58,12 +84,21 @@ export default function ResultsPage() {
             {totalVoted} of {totalVoters} students voted ({totalVoters > 0 ? Math.round((totalVoted / totalVoters) * 100) : 0}% turnout)
           </p>
         </div>
-        <button onClick={exportCSV} className="btn-gold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
-          <Download size={16} /> Export CSV
-        </button>
+        <div className="flex gap-2">
+          <button onClick={exportImage} disabled={downloadingImage}
+            className="btn-ghost px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+            {downloadingImage ? <Loader2 size={16} className="animate-spin" /> : <Image size={16} />}
+            Download Image
+          </button>
+          {isSuperAdmin && (
+            <button onClick={exportCSV} className="btn-gold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+              <Download size={16} /> Export CSV
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="space-y-6">
+      <div ref={resultsRef} className="space-y-6">
         {positions.map(position => {
           const candidates = [...(position.candidates ?? [])].sort((a, b) => b.vote_count - a.vote_count)
           const totalVotes = candidates.reduce((s, c) => s + c.vote_count, 0)

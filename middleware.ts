@@ -9,10 +9,10 @@ function buildCSP(): string {
   const host = url ? new URL(url).host : '*.supabase.co'
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: blob: https://${host}`,
-    "font-src 'self' data:",
+    `font-src 'self' data: https://fonts.gstatic.com`,
     `connect-src 'self' https://${host} wss://${host}`,
     "base-uri 'self'",
     "form-action 'self'",
@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   // Public paths — always allow
-  if (path.startsWith('/login') || path.startsWith('/admin/login') || path.startsWith('/api') || path.startsWith('/_next')) {
+  if (path.startsWith('/login') || path.startsWith('/admin/login') || path.startsWith('/admin/setup') || path.startsWith('/api') || path.startsWith('/_next')) {
     return addSecurityHeaders(NextResponse.next())
   }
 
@@ -86,13 +86,29 @@ export async function middleware(request: NextRequest) {
       return addSecurityHeaders(NextResponse.redirect(new URL('/login', request.url)))
     }
 
+    const userEmail = user.email ?? ''
+    const isConfiguredAdmin = userEmail === process.env.NEXT_PUBLIC_ADMIN_EMAIL
+
+    // Check if user is an admin (via admin_profiles table, fall back to configured admin)
+    let userIsAdmin = isConfiguredAdmin
+    if (!userIsAdmin) {
+      try {
+        const { data: adminProfile } = await supabase
+          .from('admin_profiles')
+          .select('id')
+          .eq('email', userEmail)
+          .single()
+        userIsAdmin = !!adminProfile
+      } catch {}
+    }
+
     // Admin on vote page → redirect to dashboard
-    if (path.startsWith('/vote') && user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+    if (path.startsWith('/vote') && userIsAdmin) {
       return addSecurityHeaders(NextResponse.redirect(new URL('/admin/dashboard', request.url)))
     }
 
     // Non-admin on admin page → redirect to vote
-    if (path.startsWith('/admin') && user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+    if (path.startsWith('/admin') && !userIsAdmin) {
       return addSecurityHeaders(NextResponse.redirect(new URL('/vote', request.url)))
     }
 

@@ -52,3 +52,23 @@ export interface VotingSession {
   created_at: string
   ended_at: string | null
 }
+
+export interface AdminPermissions {
+  view_results: boolean
+  view_positions: boolean
+}
+
+export interface AdminProfile {
+  id: string
+  user_id: string
+  email: string
+  name: string
+  role: 'super_admin' | 'admin'
+  permissions: AdminPermissions
+  created_at: string
+}
+
+export const DEFAULT_ADMIN_PERMISSIONS: AdminPermissions = {
+  view_results: true,
+  view_positions: true,
+}
