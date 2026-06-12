@@ -51,14 +51,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Database error. Check that the students table exists.' }, { status: 500 })
     }
 
-    if (!student) {
-      logAuth('login', email, 'FAILED - not registered')
-      return NextResponse.json({ error: 'This email is not registered to vote' }, { status: 401 })
-    }
-
-    if (student.has_voted) {
-      logAuth('login', email, 'FAILED - already voted')
-      return NextResponse.json({ error: 'You have already voted' }, { status: 403 })
+    if (!student || student.has_voted) {
+      logAuth('login', email, !student ? 'FAILED - not registered' : 'FAILED - already voted')
+      // Generic response — don't leak whether the email exists or has voted
+      return NextResponse.json({ error: 'Cannot sign in with this email' }, { status: 401 })
     }
 
     const exp = getCookieExpiry()
