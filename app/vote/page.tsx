@@ -248,18 +248,23 @@ export default function VotePage() {
                     className={`candidate-card glass-card rounded-2xl overflow-hidden ${isSelected ? 'selected' : ''}`}
                     onClick={() => selectCandidate(currentPosition.id, candidate.id)}>
                     {/* Photo */}
-                    <div className="h-48 relative overflow-hidden"
-                      style={{ background: 'linear-gradient(135deg, #1A4A3A, #0A0A0F)' }}>
+                    <div className="h-48 relative overflow-hidden bg-[#1A4A3A]">
                       {candidate.photo_url ? (
-                        <Image src={candidate.photo_url} alt={candidate.full_name}
-                          fill className="object-cover object-top" />
+                        <>
+                          <img src={candidate.photo_url} alt=""
+                            className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60" />
+                          <div className="absolute inset-0 flex items-center justify-center p-6">
+                            <Image src={candidate.photo_url} alt={candidate.full_name}
+                              width={200} height={200} className="object-contain w-auto h-auto max-w-full max-h-full rounded-lg shadow-2xl" />
+                          </div>
+                        </>
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <User size={64} style={{ color: 'rgba(201,168,76,0.3)' }} />
+                          <User size={64} className="opacity-30" style={{ color: '#C9A84C' }} />
                         </div>
                       )}
                       {isSelected && (
-                        <div className="absolute inset-0 flex items-end p-4"
+                        <div className="absolute inset-0 flex items-end p-4 pointer-events-none"
                           style={{ background: 'linear-gradient(to top, rgba(201,168,76,0.3), transparent)' }}>
                         </div>
                       )}
