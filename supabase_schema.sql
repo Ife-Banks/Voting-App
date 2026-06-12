@@ -12,6 +12,10 @@ ALTER TABLE students DROP COLUMN IF EXISTS otp_expires_at;
 ALTER TABLE students DROP COLUMN IF EXISTS otp_attempts;
 ALTER TABLE students DROP COLUMN IF EXISTS otp_created_at;
 
+-- Ensure email has UNIQUE constraint (needed for upsert on_conflict)
+ALTER TABLE students DROP CONSTRAINT IF EXISTS students_email_key CASCADE;
+ALTER TABLE students ADD CONSTRAINT students_email_key UNIQUE (email);
+
 ------------------------------------------------------
 -- 2. CREATE TABLES (safe to re-run)
 ------------------------------------------------------

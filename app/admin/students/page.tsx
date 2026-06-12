@@ -30,8 +30,12 @@ export default function StudentsPage() {
     setAdding(true)
     const supabase = createClient()
     const { data, error } = await supabase.from('students').insert({ email }).select().single()
-    if (data) { setStudents(prev => [...prev, data].sort((a, b) => a.email.localeCompare(b.email))); setNewEmail('') }
-    else if (error) alert('Email already exists or invalid.')
+    if (error) {
+      alert(`Error: ${error.message}`)
+    } else if (data) {
+      setStudents(prev => [...prev, data].sort((a, b) => a.email.localeCompare(b.email)))
+      setNewEmail('')
+    }
     setAdding(false)
   }
 
@@ -58,7 +62,9 @@ export default function StudentsPage() {
     const supabase = createClient()
     const rows = emails.map(email => ({ email }))
     const { data, error } = await supabase.from('students').upsert(rows, { onConflict: 'email' }).select()
-    if (data) {
+    if (error) {
+      alert(`Error: ${error.message}`)
+    } else if (data) {
       await load()
       setBulkText('')
       setShowBulk(false)
