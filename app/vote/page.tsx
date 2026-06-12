@@ -60,7 +60,7 @@ export default function VotePage() {
 
       // Load positions with candidates
       const { data: posData } = await supabase
-  .from('positions').select('*, public_candidates(*)').order('display_order')
+  .from('positions').select('*, candidates(*)').order('display_order')
       if (posData) setPositions(posData)
       setLoading(false)
     } catch {
