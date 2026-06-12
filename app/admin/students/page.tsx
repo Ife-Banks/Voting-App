@@ -56,7 +56,9 @@ export default function StudentsPage() {
   }
 
   async function addBulk() {
-    const emails = bulkText.split('\n').map(e => e.trim().toLowerCase()).filter(e => e && e.includes('@'))
+    const emails = [...new Set(
+      bulkText.split('\n').map(e => e.trim().toLowerCase()).filter(e => e && e.includes('@'))
+    )]
     if (!emails.length) { alert('No valid emails found.'); return }
     setBulkLoading(true)
     const supabase = createClient()
