@@ -35,36 +35,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (isLoginPage || isSetupPage) return
     async function check() {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        const user = session?.user
-        if (!user) { router.push('/admin/login'); return }
-
-        const { data: profile, error: profileErr } = await supabase
-          .from('admin_profiles')
-          .select('*')
-          .eq('email', user.email)
-          .maybeSingle()
-
-        if (profileErr) {
-          // Table doesn't exist yet — fall back to super admin for the configured admin
-          if (user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
-            setAdminProfile({
-              id: '', user_id: user.id, email: user.email!,
-              name: user.email!.split('@')[0],
-              role: 'super_admin',
-              permissions: { view_results: true, view_positions: true },
-              created_at: new Date().toISOString(),
-            })
-          } else {
-            router.push('/admin/login')
-            return
-          }
-        } else if (!profile) {
-          router.push('/admin/login')
-          return
-        } else {
-          setAdminProfile(profile)
-        }
+        // Use the API route for profile (uses service role key, bypasses RLS)
+        const profileRes = await fetch('/api/admin/profile')
+        if (!profileRes.ok) { router.push('/admin/login'); return }
+        const profileData = await profileRes.json()
+        if (!profileData?.profile) { router.push('/admin/login'); return }
+        setAdminProfile(profileData.profile)
 
         const { data: settingsData } = await supabase.from('settings').select('election_name').single()
         if (settingsData) setElectionName(settingsData.election_name)

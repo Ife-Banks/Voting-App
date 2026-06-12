@@ -164,13 +164,15 @@ CREATE POLICY "settings_public_read" ON settings FOR SELECT USING (true);
 CREATE POLICY "settings_admin_update" ON settings FOR UPDATE
   USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
 
--- ADMIN_PROFILES — admin reads own + any admin, super admin writes
+-- ADMIN_PROFILES — own-row read, super admin full access (no self-referencing subquery)
 CREATE POLICY "admin_profiles_read" ON admin_profiles FOR SELECT
-  USING (auth.email() = email OR EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
+  USING (auth.email() = email);
+CREATE POLICY "admin_profiles_super_read" ON admin_profiles FOR SELECT
+  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 CREATE POLICY "admin_profiles_insert" ON admin_profiles FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email() AND role = 'super_admin'));
+  WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 CREATE POLICY "admin_profiles_delete" ON admin_profiles FOR DELETE
-  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email() AND role = 'super_admin'));
+  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 
 -- STORAGE — candidate photos
 INSERT INTO storage.buckets (id, name, public)
