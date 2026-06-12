@@ -47,9 +47,9 @@ export default function VotePage() {
       }
 
       // Check if already voted
-      const { data: student } = await supabase
-        .from('students').select('has_voted').eq('email', data.user.email).single()
-      if (student?.has_voted) {
+      const statusRes = await fetch('/api/student/status')
+      const statusData = await statusRes.json()
+      if (statusData?.has_voted) {
         setAlreadyVoted(true); setLoading(false)
         setTimeout(async () => {
           await fetch('/api/auth/logout', { method: 'POST' })
@@ -60,7 +60,7 @@ export default function VotePage() {
 
       // Load positions with candidates
       const { data: posData } = await supabase
-        .from('positions').select('*, candidates(*)').order('display_order')
+  .from('positions').select('*, public_candidates(*)').order('display_order')
       if (posData) setPositions(posData)
       setLoading(false)
     } catch {
