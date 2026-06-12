@@ -117,43 +117,60 @@ ALTER TABLE IF EXISTS admin_profiles ENABLE ROW LEVEL SECURITY;
 -- Replace 'ifeoluwa.bankole@tech-u.edu.ng' with your admin email
 ------------------------------------------------------
 
--- STUDENTS — admin only, public blocked
-CREATE POLICY "students_admin_access" ON students
-  FOR ALL USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng')
-  WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+-- STUDENTS — admin only (via admin_profiles), public blocked
+CREATE POLICY "students_admin_read" ON students FOR SELECT
+  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
+CREATE POLICY "students_admin_write" ON students FOR INSERT
+  WITH CHECK (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
+CREATE POLICY "students_admin_update" ON students FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
+CREATE POLICY "students_admin_delete" ON students FOR DELETE
+  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
 
 -- POSITIONS — public read, admin write
 CREATE POLICY "positions_public_read" ON positions FOR SELECT USING (true);
-CREATE POLICY "positions_admin_write" ON positions
-  FOR ALL USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng')
-  WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+CREATE POLICY "positions_admin_insert" ON positions FOR INSERT
+  WITH CHECK (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
+CREATE POLICY "positions_admin_update" ON positions FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
+CREATE POLICY "positions_admin_delete" ON positions FOR DELETE
+  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
 
 -- CANDIDATES — public read, admin write
 CREATE POLICY "candidates_public_read" ON candidates FOR SELECT USING (true);
-CREATE POLICY "candidates_admin_write" ON candidates
-  FOR ALL USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng')
-  WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+CREATE POLICY "candidates_admin_insert" ON candidates FOR INSERT
+  WITH CHECK (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
+CREATE POLICY "candidates_admin_update" ON candidates FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
+CREATE POLICY "candidates_admin_delete" ON candidates FOR DELETE
+  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
 
--- VOTES — public locked, admin read
+-- VOTES — admin read only
 CREATE POLICY "votes_admin_read" ON votes FOR SELECT
-  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
 
 -- VOTING_SESSIONS — admin only
-CREATE POLICY "voting_sessions_admin_access" ON voting_sessions
-  FOR ALL USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng')
-  WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+CREATE POLICY "voting_sessions_admin_read" ON voting_sessions FOR SELECT
+  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
+CREATE POLICY "voting_sessions_admin_insert" ON voting_sessions FOR INSERT
+  WITH CHECK (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
+CREATE POLICY "voting_sessions_admin_update" ON voting_sessions FOR UPDATE
+  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
+CREATE POLICY "voting_sessions_admin_delete" ON voting_sessions FOR DELETE
+  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
 
 -- SETTINGS — public read, admin update
 CREATE POLICY "settings_public_read" ON settings FOR SELECT USING (true);
 CREATE POLICY "settings_admin_update" ON settings FOR UPDATE
-  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
 
--- ADMIN_PROFILES — admin reads own + super admin full
+-- ADMIN_PROFILES — admin reads own + any admin, super admin writes
 CREATE POLICY "admin_profiles_read" ON admin_profiles FOR SELECT
-  USING (auth.email() = email OR auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
-CREATE POLICY "admin_profiles_write" ON admin_profiles
-  FOR ALL USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng')
-  WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+  USING (auth.email() = email OR EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
+CREATE POLICY "admin_profiles_insert" ON admin_profiles FOR INSERT
+  WITH CHECK (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email() AND role = 'super_admin'));
+CREATE POLICY "admin_profiles_delete" ON admin_profiles FOR DELETE
+  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email() AND role = 'super_admin'));
 
 -- STORAGE — candidate photos
 INSERT INTO storage.buckets (id, name, public)
