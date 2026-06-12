@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getSessionFromCookie } from '@/lib/session'
 
@@ -86,11 +87,16 @@ export async function middleware(request: NextRequest) {
     const userEmail = user.email ?? ''
     const isConfiguredAdmin = userEmail === process.env.NEXT_PUBLIC_ADMIN_EMAIL
 
-    // Check if user is an admin (via admin_profiles table, fall back to configured admin)
+    // Check if user is an admin (via admin_profiles, bypasses RLS)
     let userIsAdmin = isConfiguredAdmin
     if (!userIsAdmin) {
       try {
-        const { data: adminProfile } = await supabase
+        const adminClient = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          { auth: { autoRefreshToken: false, persistSession: false } }
+        )
+        const { data: adminProfile } = await adminClient
           .from('admin_profiles')
           .select('id')
           .eq('email', userEmail)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { getSessionFromCookie } from '@/lib/session'
 import { logAuth } from '@/lib/logger'
 
@@ -39,7 +40,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ user: null }, { status: 401 })
     }
 
-    const isAdmin = user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL
+    const isConfiguredAdmin = user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL
+    let isAdmin = isConfiguredAdmin
+    if (!isAdmin) {
+      try {
+        const adminClient = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          { auth: { autoRefreshToken: false, persistSession: false } }
+        )
+        const { data: profile } = await adminClient
+          .from('admin_profiles')
+          .select('id')
+          .eq('email', user.email)
+          .single()
+        isAdmin = !!profile
+      } catch {}
+    }
     logAuth('me', user.email, isAdmin ? 'admin' : 'student-user')
     return NextResponse.json({
       user: { email: user.email, id: user.id },
