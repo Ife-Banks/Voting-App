@@ -228,7 +228,7 @@ BEGIN
   SET vote_count = vote_count + 1
   WHERE id = candidate_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET ROLE vote_counter;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 ------------------------------------------------------
 -- ADMIN SETUP (manual step)
