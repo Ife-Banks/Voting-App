@@ -48,10 +48,12 @@ export default function VotePage() {
         setElectionName(settings.election_name)
       }
 
-      // Check if already voted
+      // Check if already voted — but allow if results are public (they can view results)
       const statusRes = await fetch('/api/student/status')
       const statusData = await statusRes.json()
-      if (statusData?.has_voted) {
+      const hasVoted = statusData?.has_voted
+      const rp = settings?.results_public ?? false
+      if (hasVoted && !rp) {
         setAlreadyVoted(true); setLoading(false)
         setTimeout(async () => {
           await fetch('/api/auth/logout', { method: 'POST' })
@@ -59,6 +61,7 @@ export default function VotePage() {
         }, 3000)
         return
       }
+      // If results_public=true, don't block on has_voted — allow them to see results
 
       // Load positions with candidates
       const { data: posData } = await supabase

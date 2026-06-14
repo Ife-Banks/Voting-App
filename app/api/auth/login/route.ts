@@ -51,9 +51,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Database error. Check that the students table exists.' }, { status: 500 })
     }
 
-    if (!student || student.has_voted) {
-      logAuth('login', email, !student ? 'FAILED - not registered' : 'FAILED - already voted')
-      // Generic response — don't leak whether the email exists or has voted
+    if (!student) {
+      logAuth('login', email, 'FAILED - not registered')
+      return NextResponse.json({ error: 'Cannot sign in with this email' }, { status: 401 })
+    }
+
+    // Check results visibility
+    const { data: settings } = await supabase
+      .from('settings')
+      .select('voting_open, results_public')
+      .eq('id', 1)
+      .maybeSingle()
+
+    const resultsPublic = settings?.results_public ?? false
+
+    // If already voted but results are public, allow login (they can view results)
+    // If already voted and results are NOT public, block
+    if (student.has_voted && !resultsPublic) {
+      logAuth('login', email, 'FAILED - already voted')
       return NextResponse.json({ error: 'Cannot sign in with this email' }, { status: 401 })
     }
 
