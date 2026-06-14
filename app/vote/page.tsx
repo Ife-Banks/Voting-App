@@ -17,6 +17,7 @@ export default function VotePage() {
   const [error, setError] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const [votingOpen, setVotingOpen] = useState(true)
+  const [resultsPublic, setResultsPublic] = useState(false)
   const [electionName, setElectionName] = useState('SRC Elections')
   const [alreadyVoted, setAlreadyVoted] = useState(false)
   const router = useRouter()
@@ -43,6 +44,7 @@ export default function VotePage() {
       const { data: settings } = await supabase.from('settings').select('*').single()
       if (settings) {
         setVotingOpen(settings.voting_open)
+        setResultsPublic(settings.results_public ?? false)
         setElectionName(settings.election_name)
       }
 
@@ -145,8 +147,32 @@ export default function VotePage() {
     )
   }
 
-  // Voting closed — show results not out yet
+  // Voting closed — show results if published, otherwise show not out yet
   if (!votingOpen) {
+    if (resultsPublic) {
+      return (
+        <div className="min-h-screen flex items-center justify-center px-4">
+          <div className="text-center max-w-md">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6"
+              style={{ background: 'rgba(61,138,108,0.1)', border: '1px solid rgba(61,138,108,0.2)' }}>
+              <Trophy size={36} style={{ color: '#C9A84C' }} />
+            </div>
+            <h1 className="text-3xl font-display font-bold mb-4" style={{ color: '#F5F0E8' }}>
+              Voting Has Ended
+            </h1>
+            <p style={{ color: 'rgba(245,240,232,0.5)' }} className="mb-6">
+              Results are now available. Click below to view.
+            </p>
+            <a href="/results" className="btn-gold px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto w-fit">
+              <Trophy size={16} /> View Results
+            </a>
+            <button onClick={handleLogout} className="btn-ghost px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto mt-4">
+              <LogOut size={16} /> Sign Out
+            </button>
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center max-w-md">
@@ -160,10 +186,7 @@ export default function VotePage() {
           <p style={{ color: 'rgba(245,240,232,0.5)' }} className="mb-6">
             Voting has closed. Results will be announced soon.
           </p>
-          <a href="/results" className="btn-gold px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto w-fit">
-            <Trophy size={16} /> View Results
-          </a>
-          <button onClick={handleLogout} className="btn-ghost px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto mt-4">
+          <button onClick={handleLogout} className="btn-ghost px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto">
             <LogOut size={16} /> Sign Out
           </button>
         </div>
