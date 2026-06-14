@@ -11,6 +11,7 @@ export default function ResultsPage() {
   const [positions, setPositions] = useState<Position[]>([])
   const [loading, setLoading] = useState(true)
   const [votingOpen, setVotingOpen] = useState(true)
+  const [resultsPublic, setResultsPublic] = useState(false)
   const [electionName, setElectionName] = useState('SRC Elections')
   const [schoolName, setSchoolName] = useState('')
   const [userEmail, setUserEmail] = useState('')
@@ -30,13 +31,14 @@ export default function ResultsPage() {
 
         const { data: settings } = await supabase
           .from('settings')
-          .select('voting_open, election_name, school_name')
+          .select('voting_open, results_public, election_name, school_name')
           .single()
 
         if (cancelled) return
 
         if (settings) {
           setVotingOpen(settings.voting_open ?? true)
+          setResultsPublic(settings.results_public ?? false)
           setElectionName(settings.election_name ?? 'SRC Elections')
           setSchoolName(settings.school_name ?? '')
         }
@@ -91,6 +93,34 @@ export default function ResultsPage() {
           ) : (
             <Link href="/login" className="btn-gold px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto w-fit">
               Sign In to Vote
+            </Link>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  if (!resultsPublic) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6"
+            style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)' }}>
+            <AlertCircle size={36} style={{ color: '#C9A84C' }} />
+          </div>
+          <h1 className="text-3xl font-display font-bold mb-4" style={{ color: '#F5F0E8' }}>
+            Results Not Out Yet
+          </h1>
+          <p style={{ color: 'rgba(245,240,232,0.5)' }} className="mb-8">
+            The admin has not published the results yet. Check back soon.
+          </p>
+          {userEmail ? (
+            <Link href="/vote" className="btn-gold px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto w-fit">
+              <Vote size={16} /> Go to Vote
+            </Link>
+          ) : (
+            <Link href="/login" className="btn-ghost px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto">
+              Sign In
             </Link>
           )}
         </div>

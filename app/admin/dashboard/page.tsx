@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Users, Award, Vote, ToggleLeft, ToggleRight, Loader2, TrendingUp, Calendar, Square, BarChart2, ChevronRight } from 'lucide-react'
+import { Users, Award, Vote, ToggleLeft, ToggleRight, Loader2, TrendingUp, Calendar, Square, BarChart2, ChevronRight, Eye, EyeOff } from 'lucide-react'
 import type { Settings, VotingSession } from '@/lib/types'
 import { useAdminProfile } from '@/lib/admin-context'
 
@@ -14,6 +14,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ students: 0, voted: 0, positions: 0, candidates: 0 })
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState(false)
+  const [togglingResults, setTogglingResults] = useState(false)
   const [endingSession, setEndingSession] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [electionName, setElectionName] = useState('')
@@ -49,6 +50,16 @@ export default function AdminDashboard() {
       .from('settings').update({ voting_open: !settings.voting_open }).eq('id', 1).select().single()
     if (data) setSettings(data)
     setToggling(false)
+  }
+
+  async function toggleResultsPublic() {
+    if (!settings) return
+    setTogglingResults(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('settings').update({ results_public: !settings.results_public }).eq('id', 1).select().single()
+    if (data) setSettings(data)
+    setTogglingResults(false)
   }
 
   async function saveSettings() {
@@ -159,6 +170,36 @@ export default function AdminDashboard() {
               className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${settings?.voting_open ? 'bg-red-900/30 border border-red-700/50 text-red-400 hover:bg-red-900/50' : 'btn-gold'}`}>
               {toggling ? <Loader2 size={16} className="animate-spin" /> :
                 settings?.voting_open ? <><ToggleLeft size={18} /> Close Voting</> : <><ToggleRight size={18} /> Open Voting</>}
+            </button>
+          )}
+        </div>
+
+        {/* Results Visibility toggle */}
+        <div className="glass-card rounded-2xl p-6">
+          <h2 className="text-lg font-display font-semibold mb-4" style={{ color: '#F5F0E8' }}>
+            Results Visibility
+          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <p className="font-medium mb-1" style={{ color: '#F5F0E8' }}>
+                {settings?.results_public ? 'Results are PUBLIC' : 'Results are HIDDEN'}
+              </p>
+              <p className="text-sm" style={{ color: 'rgba(245,240,232,0.45)' }}>
+                {settings?.results_public
+                  ? 'Students can view election results'
+                  : 'Students see "Results Not Out Yet"'}
+              </p>
+            </div>
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${settings?.results_public ? 'badge-open' : 'badge-closed'}`}>
+              {settings?.results_public ? 'PUBLIC' : 'HIDDEN'}
+            </span>
+          </div>
+
+          {isSuperAdmin && (
+            <button onClick={toggleResultsPublic} disabled={togglingResults}
+              className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${settings?.results_public ? 'bg-red-900/30 border border-red-700/50 text-red-400 hover:bg-red-900/50' : 'btn-gold'}`}>
+              {togglingResults ? <Loader2 size={16} className="animate-spin" /> :
+                settings?.results_public ? <><EyeOff size={18} /> Hide Results</> : <><Eye size={18} /> Publish Results</>}
             </button>
           )}
         </div>

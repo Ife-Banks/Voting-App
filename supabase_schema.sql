@@ -65,13 +65,14 @@ CREATE TABLE IF NOT EXISTS voting_sessions (
 CREATE TABLE IF NOT EXISTS settings (
   id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   voting_open BOOLEAN DEFAULT FALSE,
+  results_public BOOLEAN DEFAULT FALSE,
   election_name TEXT DEFAULT 'SRC Elections',
   school_name TEXT DEFAULT 'Our School',
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-INSERT INTO settings (id, voting_open, election_name, school_name)
-VALUES (1, FALSE, 'SRC Elections 2025/2026', 'Abiola Ajimobi Technical University')
+INSERT INTO settings (id, voting_open, results_public, election_name, school_name)
+VALUES (1, FALSE, FALSE, 'SRC Elections 2025/2026', 'Abiola Ajimobi Technical University')
 ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS admin_profiles (

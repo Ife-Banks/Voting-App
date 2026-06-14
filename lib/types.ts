@@ -36,6 +36,7 @@ export interface Vote {
 export interface Settings {
   id: number
   voting_open: boolean
+  results_public: boolean
   election_name: string
   school_name: string
   updated_at: string
