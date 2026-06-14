@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import type { Position, Candidate, VoteSelection } from '@/lib/types'
-import { CheckCircle2, ChevronRight, ChevronLeft, LogOut, AlertCircle, Loader2, User } from 'lucide-react'
+import { CheckCircle2, ChevronRight, ChevronLeft, LogOut, AlertCircle, Loader2, User, Trophy } from 'lucide-react'
 import Image from 'next/image'
 
 export default function VotePage() {
@@ -157,10 +157,13 @@ export default function VotePage() {
           <h1 className="text-3xl font-display font-bold mb-4" style={{ color: '#F5F0E8' }}>
             Results Not Out Yet
           </h1>
-          <p style={{ color: 'rgba(245,240,232,0.5)' }} className="mb-8">
-            Voting has closed. Results will be announced soon. Please check back later.
+          <p style={{ color: 'rgba(245,240,232,0.5)' }} className="mb-6">
+            Voting has closed. Results will be announced soon.
           </p>
-          <button onClick={handleLogout} className="btn-ghost px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto">
+          <a href="/results" className="btn-gold px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto w-fit">
+            <Trophy size={16} /> View Results
+          </a>
+          <button onClick={handleLogout} className="btn-ghost px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto mt-4">
             <LogOut size={16} /> Sign Out
           </button>
         </div>

@@ -188,12 +188,6 @@ DROP VIEW IF EXISTS public_candidates CASCADE;
 -- Create a restricted role for vote incrementing (least privilege)
 ------------------------------------------------------
 DO $$ BEGIN
-  CREATE ROLE vote_counter WITH LOGIN PASSWORD 'auto-generated-vote-counter-role';
-EXCEPTION WHEN DUPLICATE_OBJECT THEN NULL;
-END $$;
-
--- Vote counter role — minimal privileges for increment_vote only
-DO $$ BEGIN
   CREATE ROLE vote_counter WITH LOGIN PASSWORD 'vote-counter-role';
 EXCEPTION WHEN DUPLICATE_OBJECT THEN NULL;
 END $$;
@@ -211,7 +205,7 @@ REVOKE UPDATE, DELETE ON candidates FROM service_role, authenticated, anon;
 GRANT INSERT ON votes TO service_role;
 
 ------------------------------------------------------
--- 6. ADMIN PROFILES (seed)
+-- 7. ADMIN PROFILES (seed)
 ------------------------------------------------------
 INSERT INTO admin_profiles (email, name, role, permissions)
 VALUES ('ifeoluwa.bankole@tech-u.edu.ng', 'Super Admin', 'super_admin',
@@ -219,7 +213,7 @@ VALUES ('ifeoluwa.bankole@tech-u.edu.ng', 'Super Admin', 'super_admin',
 ON CONFLICT (email) DO NOTHING;
 
 ------------------------------------------------------
--- 7. VOTE FUNCTION
+-- 8. VOTE FUNCTION
 ------------------------------------------------------
 CREATE OR REPLACE FUNCTION increment_vote(candidate_id UUID)
 RETURNS void AS $$
@@ -231,7 +225,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET ROLE vote_counter;
 
 ------------------------------------------------------
--- 7. ADMIN SETUP (in Supabase Auth)
+-- ADMIN SETUP (manual step)
 ------------------------------------------------------
--- Go to Authentication > Users > Invite user
--- Use: ifeoluwa.bankole@tech-u.edu.ng
+-- Invite super admin in Supabase Dashboard > Authentication > Users > Invite user
+-- Email: ifeoluwa.bankole@tech-u.edu.ng
