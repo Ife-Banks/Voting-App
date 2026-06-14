@@ -16,6 +16,9 @@ ALTER TABLE students DROP COLUMN IF EXISTS otp_created_at;
 ALTER TABLE students DROP CONSTRAINT IF EXISTS students_email_key CASCADE;
 ALTER TABLE students ADD CONSTRAINT students_email_key UNIQUE (email);
 
+-- Add results_public column to existing settings table
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS results_public BOOLEAN DEFAULT FALSE;
+
 ------------------------------------------------------
 -- 2. CREATE TABLES (safe to re-run)
 ------------------------------------------------------
@@ -166,6 +169,8 @@ CREATE POLICY "admin_profiles_super_read" ON admin_profiles FOR SELECT
   USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 CREATE POLICY "admin_profiles_insert" ON admin_profiles FOR INSERT
   WITH CHECK (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
+CREATE POLICY "admin_profiles_update" ON admin_profiles FOR UPDATE
+  USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 CREATE POLICY "admin_profiles_delete" ON admin_profiles FOR DELETE
   USING (auth.email() = 'ifeoluwa.bankole@tech-u.edu.ng');
 
@@ -189,7 +194,7 @@ DROP VIEW IF EXISTS public_candidates CASCADE;
 -- Create a restricted role for vote incrementing (least privilege)
 ------------------------------------------------------
 DO $$ BEGIN
-  CREATE ROLE vote_counter WITH LOGIN PASSWORD 'vote-counter-role';
+  CREATE ROLE vote_counter WITH NOLOGIN PASSWORD 'vote-counter-role';
 EXCEPTION WHEN DUPLICATE_OBJECT THEN NULL;
 END $$;
 
