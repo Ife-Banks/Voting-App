@@ -136,16 +136,10 @@ CREATE POLICY "positions_admin_update" ON positions FOR UPDATE
 CREATE POLICY "positions_admin_delete" ON positions FOR DELETE
   USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
 
--- CANDIDATES — public read, admin write
+-- CANDIDATES — public read only, no updates/deletes after creation
 CREATE POLICY "candidates_public_read" ON candidates FOR SELECT USING (true);
-CREATE POLICY "candidates_admin_insert" ON candidates FOR INSERT
-  WITH CHECK (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
-CREATE POLICY "candidates_admin_update" ON candidates FOR UPDATE
-  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
-CREATE POLICY "candidates_admin_delete" ON candidates FOR DELETE
-  USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
 
--- VOTES — admin read only
+-- VOTES — admin read only, no inserts/updates/deletes after voting
 CREATE POLICY "votes_admin_read" ON votes FOR SELECT
   USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
 
@@ -190,6 +184,33 @@ CREATE POLICY "candidates_update" ON storage.objects FOR UPDATE
 DROP VIEW IF EXISTS public_candidates CASCADE;
 
 ------------------------------------------------------
+-- 6. IMMUTABLE VOTES — prevent any modification after voting
+-- Create a restricted role for vote incrementing (least privilege)
+------------------------------------------------------
+DO $$ BEGIN
+  CREATE ROLE vote_counter WITH LOGIN PASSWORD 'auto-generated-vote-counter-role';
+EXCEPTION WHEN DUPLICATE_OBJECT THEN NULL;
+END $$;
+
+-- Vote counter role — minimal privileges for increment_vote only
+DO $$ BEGIN
+  CREATE ROLE vote_counter WITH LOGIN PASSWORD 'vote-counter-role';
+EXCEPTION WHEN DUPLICATE_OBJECT THEN NULL;
+END $$;
+
+REVOKE ALL ON candidates FROM vote_counter;
+GRANT SELECT ON candidates TO vote_counter;
+GRANT UPDATE (vote_count) ON candidates TO vote_counter;
+
+-- Block UPDATE/DELETE on votes and candidates for all application roles
+-- INSERT on votes is still allowed for service_role (via /api/vote route)
+REVOKE UPDATE, DELETE ON votes FROM service_role, authenticated, anon;
+REVOKE UPDATE, DELETE ON candidates FROM service_role, authenticated, anon;
+
+-- Explicitly ensure service_role can INSERT votes (for /api/vote during active voting)
+GRANT INSERT ON votes TO service_role;
+
+------------------------------------------------------
 -- 6. ADMIN PROFILES (seed)
 ------------------------------------------------------
 INSERT INTO admin_profiles (email, name, role, permissions)
@@ -207,7 +228,7 @@ BEGIN
   SET vote_count = vote_count + 1
   WHERE id = candidate_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET ROLE vote_counter;
 
 ------------------------------------------------------
 -- 7. ADMIN SETUP (in Supabase Auth)

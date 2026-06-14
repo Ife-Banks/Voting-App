@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Users, Award, Vote, ToggleLeft, ToggleRight, Loader2, TrendingUp, Calendar, Square } from 'lucide-react'
+import { Users, Award, Vote, ToggleLeft, ToggleRight, Loader2, TrendingUp, Calendar, Square, BarChart2, ChevronRight } from 'lucide-react'
 import type { Settings, VotingSession } from '@/lib/types'
 import { useAdminProfile } from '@/lib/admin-context'
 
@@ -162,6 +162,23 @@ export default function AdminDashboard() {
             </button>
           )}
         </div>
+
+        {/* View Results — super admin only */}
+        {isSuperAdmin && (
+          <a href="/admin/results" className="glass-card rounded-2xl p-6 flex items-center gap-4 hover:bg-white/5 transition-colors group">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)' }}>
+              <BarChart2 size={22} style={{ color: '#C9A84C' }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-display font-semibold mb-1" style={{ color: '#F5F0E8' }}>View Election Results</p>
+              <p className="text-xs" style={{ color: 'rgba(245,240,232,0.4)' }}>
+                See full breakdown of votes per candidate and position
+              </p>
+            </div>
+            <ChevronRight size={18} className="opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" style={{ color: '#C9A84C' }} />
+          </a>
+        )}
 
         {/* Turnout */}
         <div className="glass-card rounded-2xl p-6">

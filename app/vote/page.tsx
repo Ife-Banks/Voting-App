@@ -145,19 +145,20 @@ export default function VotePage() {
     )
   }
 
-  // Voting closed
+  // Voting closed — show results not out yet
   if (!votingOpen) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center max-w-md">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6 glass-card">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6"
+            style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)' }}>
             <AlertCircle size={36} style={{ color: '#C9A84C' }} />
           </div>
           <h1 className="text-3xl font-display font-bold mb-4" style={{ color: '#F5F0E8' }}>
-            Voting is Closed
+            Results Not Out Yet
           </h1>
           <p style={{ color: 'rgba(245,240,232,0.5)' }} className="mb-8">
-            The election portal is currently closed. Please check back later or contact your administrator.
+            Voting has closed. Results will be announced soon. Please check back later.
           </p>
           <button onClick={handleLogout} className="btn-ghost px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto">
             <LogOut size={16} /> Sign Out
