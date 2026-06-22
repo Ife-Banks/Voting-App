@@ -1,7 +1,11 @@
 export interface Student {
   id: string
   email: string
+  matric_number: string | null
   has_voted: boolean
+  otp_code: string | null
+  otp_expires_at: string | null
+  otp_attempts: number | null
   created_at: string
 }
 

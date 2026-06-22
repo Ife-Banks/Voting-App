@@ -1,6 +1,7 @@
 export interface SessionData {
   email: string
   id: string
+  matric_number?: string
   exp: number
 }
 

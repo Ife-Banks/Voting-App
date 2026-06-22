@@ -10,6 +10,7 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [newEmail, setNewEmail] = useState('')
+  const [newMatricNumber, setNewMatricNumber] = useState('')
   const [adding, setAdding] = useState(false)
   const [bulkText, setBulkText] = useState('')
   const [showBulk, setShowBulk] = useState(false)
@@ -26,15 +27,17 @@ export default function StudentsPage() {
 
   async function addStudent() {
     const email = newEmail.trim().toLowerCase()
-    if (!email) return
+    const matric_number = newMatricNumber.trim().toUpperCase()
+    if (!email || !matric_number) return
     setAdding(true)
     const supabase = createClient()
-    const { data, error } = await supabase.from('students').insert({ email }).select().single()
+    const { data, error } = await supabase.from('students').insert({ email, matric_number }).select().single()
     if (error) {
       alert(`Error: ${error.message}`)
     } else if (data) {
-      setStudents(prev => [...prev, data].sort((a, b) => a.email.localeCompare(b.email)))
+      setStudents(prev => [...prev, data].sort((a, b) => (a.matric_number ?? a.email).localeCompare(b.matric_number ?? b.email)))
       setNewEmail('')
+      setNewMatricNumber('')
     }
     setAdding(false)
   }
@@ -56,13 +59,19 @@ export default function StudentsPage() {
   }
 
   async function addBulk() {
-    const emails = Array.from(new Set(
-      bulkText.split('\n').map(e => e.trim().toLowerCase()).filter(e => e && e.includes('@'))
-    ))
-    if (!emails.length) { alert('No valid emails found.'); return }
+    const lines = bulkText.split('\n').map(l => l.trim()).filter(l => l)
+    const rows: { email: string; matric_number: string }[] = []
+    for (const line of lines) {
+      const parts = line.split(',').map(p => p.trim())
+      if (parts.length >= 2) {
+        rows.push({ email: parts[0].toLowerCase(), matric_number: parts[1].toUpperCase() })
+      } else if (parts[0].includes('@')) {
+        rows.push({ email: parts[0].toLowerCase(), matric_number: '' })
+      }
+    }
+    if (!rows.length) { alert('No valid entries found. Use format: email,matric_number'); return }
     setBulkLoading(true)
     const supabase = createClient()
-    const rows = emails.map(email => ({ email }))
     const { data, error } = await supabase.from('students').upsert(rows, { onConflict: 'email' }).select()
     if (error) {
       alert(`Error: ${error.message}`)
@@ -76,14 +85,17 @@ export default function StudentsPage() {
   }
 
   function exportCSV() {
-    const csv = ['Email,Has Voted', ...students.map(s => `${s.email},${s.has_voted}`)].join('\n')
+    const csv = ['Email,Matric Number,Has Voted', ...students.map(s => `${s.email},${s.matric_number ?? ''},${s.has_voted}`)].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url; a.download = 'students.csv'; a.click()
   }
 
-  const filtered = students.filter(s => s.email.toLowerCase().includes(search.toLowerCase()))
+  const filtered = students.filter(s =>
+    (s.email?.toLowerCase().includes(search.toLowerCase()) ?? false) ||
+    (s.matric_number?.toLowerCase().includes(search.toLowerCase()) ?? false)
+  )
   const votedCount = students.filter(s => s.has_voted).length
 
   return (
@@ -108,13 +120,17 @@ export default function StudentsPage() {
 
       {/* Add single */}
       <div className="glass-card rounded-2xl p-5 mb-6">
-        <h3 className="text-sm font-semibold mb-3" style={{ color: 'rgba(245,240,232,0.7)' }}>Add Student Email</h3>
+        <h3 className="text-sm font-semibold mb-3" style={{ color: 'rgba(245,240,232,0.7)' }}>Add Student</h3>
         <div className="flex gap-3">
           <input value={newEmail} onChange={e => setNewEmail(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addStudent()}
             className="input-field flex-1 px-4 py-2.5 rounded-xl text-sm"
             placeholder="student@school.edu.ng" type="email" />
-          <button onClick={addStudent} disabled={adding}
+          <input value={newMatricNumber} onChange={e => setNewMatricNumber(e.target.value.toUpperCase())}
+            onKeyDown={e => e.key === 'Enter' && addStudent()}
+            className="input-field w-40 px-4 py-2.5 rounded-xl text-sm"
+            placeholder="MAT/2020/001" />
+          <button onClick={addStudent} disabled={adding || !newEmail || !newMatricNumber}
             className="btn-gold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 shrink-0">
             {adding ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
             Add
@@ -132,11 +148,11 @@ export default function StudentsPage() {
               <button onClick={() => setShowBulk(false)}><X size={18} style={{ color: 'rgba(245,240,232,0.4)' }} /></button>
             </div>
             <p className="text-xs mb-3" style={{ color: 'rgba(245,240,232,0.45)' }}>
-              Paste one email address per line. Duplicate emails will be skipped.
+              Paste one student per line in the format: <strong>email,matric_number</strong>
             </p>
             <textarea value={bulkText} onChange={e => setBulkText(e.target.value)}
               className="input-field w-full px-4 py-3 rounded-xl text-sm resize-none mb-4"
-              rows={10} placeholder="student1@school.edu.ng&#10;student2@school.edu.ng&#10;student3@school.edu.ng" />
+              rows={10} placeholder="student1@school.edu.ng,ENG/2020/001&#10;student2@school.edu.ng,MAT/2020/002" />
             <div className="flex gap-3">
               <button onClick={addBulk} disabled={bulkLoading}
                 className="btn-gold flex-1 py-3 rounded-xl text-sm flex items-center justify-center gap-2">
@@ -166,6 +182,7 @@ export default function StudentsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b" style={{ borderColor: 'rgba(201,168,76,0.1)' }}>
+                <th className="text-left px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Matric Number</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Email</th>
                 <th className="text-center px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Status</th>
                 <th className="text-right px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Actions</th>
@@ -173,7 +190,7 @@ export default function StudentsPage() {
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={3} className="text-center py-12 text-sm" style={{ color: 'rgba(245,240,232,0.25)' }}>
+                <tr><td colSpan={4} className="text-center py-12 text-sm" style={{ color: 'rgba(245,240,232,0.25)' }}>
                   {search ? 'No students match your search' : 'No students added yet'}
                 </td></tr>
               )}
@@ -181,6 +198,9 @@ export default function StudentsPage() {
                 <tr key={student.id}
                   className={`border-b transition-colors hover:bg-white/[0.02] ${i === filtered.length - 1 ? 'border-transparent' : ''}`}
                   style={{ borderColor: 'rgba(201,168,76,0.06)' }}>
+                  <td className="px-6 py-3.5">
+                    <p className="text-sm font-mono" style={{ color: '#C9A84C' }}>{student.matric_number ?? '—'}</p>
+                  </td>
                   <td className="px-6 py-3.5">
                     <p className="text-sm" style={{ color: '#F5F0E8' }}>{student.email}</p>
                   </td>

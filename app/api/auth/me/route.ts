@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const session = await getSessionFromCookie(req.headers.get('cookie') ?? null)
     if (session) {
       return NextResponse.json({
-        user: { email: session.email, id: session.id },
+        user: { email: session.email, id: session.id, matric_number: session.matric_number },
         type: 'student',
       })
     }

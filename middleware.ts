@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   // Public paths — always allow
-  if (path.startsWith('/login') || path.startsWith('/admin/login') || path.startsWith('/admin/setup') || path.startsWith('/api') || path.startsWith('/_next')) {
+  if (path.startsWith('/login') || path.startsWith('/verify-otp') || path.startsWith('/admin/login') || path.startsWith('/admin/setup') || path.startsWith('/api') || path.startsWith('/_next')) {
     return addSecurityHeaders(NextResponse.next())
   }
 

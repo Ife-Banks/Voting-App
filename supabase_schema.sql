@@ -1,31 +1,19 @@
 -- ============================================================
--- SRC VOTING APP — FULL SETUP
+-- SRC VOTING APP — FULL SETUP (ESSA Branch)
 -- Run this entire file in your Supabase SQL Editor
 -- ============================================================
 
 ------------------------------------------------------
--- 1. CLEAN UP OLD COLUMNS
-------------------------------------------------------
-ALTER TABLE students DROP COLUMN IF EXISTS has_logged_in;
-ALTER TABLE students DROP COLUMN IF EXISTS otp_code;
-ALTER TABLE students DROP COLUMN IF EXISTS otp_expires_at;
-ALTER TABLE students DROP COLUMN IF EXISTS otp_attempts;
-ALTER TABLE students DROP COLUMN IF EXISTS otp_created_at;
-
--- Ensure email has UNIQUE constraint (needed for upsert on_conflict)
-ALTER TABLE students DROP CONSTRAINT IF EXISTS students_email_key CASCADE;
-ALTER TABLE students ADD CONSTRAINT students_email_key UNIQUE (email);
-
--- Add results_public column to existing settings table
-ALTER TABLE settings ADD COLUMN IF NOT EXISTS results_public BOOLEAN DEFAULT FALSE;
-
-------------------------------------------------------
--- 2. CREATE TABLES (safe to re-run)
+-- 1. CREATE TABLES (must come first)
 ------------------------------------------------------
 CREATE TABLE IF NOT EXISTS students (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
+  matric_number TEXT UNIQUE,
   has_voted BOOLEAN DEFAULT FALSE,
+  otp_code TEXT,
+  otp_expires_at TIMESTAMPTZ,
+  otp_attempts INT DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -90,6 +78,11 @@ CREATE TABLE IF NOT EXISTS admin_profiles (
 );
 
 ------------------------------------------------------
+-- 2. ALTER EXISTING TABLES (safe to re-run)
+------------------------------------------------------
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS results_public BOOLEAN DEFAULT FALSE;
+
+------------------------------------------------------
 -- 3. DROP ALL EXISTING POLICIES (safe re-run)
 ------------------------------------------------------
 DO $$ DECLARE
@@ -140,10 +133,10 @@ CREATE POLICY "positions_admin_update" ON positions FOR UPDATE
 CREATE POLICY "positions_admin_delete" ON positions FOR DELETE
   USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
 
--- CANDIDATES — public read only, no updates/deletes after creation
+-- CANDIDATES — public read only
 CREATE POLICY "candidates_public_read" ON candidates FOR SELECT USING (true);
 
--- VOTES — admin read only, no inserts/updates/deletes after voting
+-- VOTES — admin read only
 CREATE POLICY "votes_admin_read" ON votes FOR SELECT
   USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
 
@@ -162,7 +155,7 @@ CREATE POLICY "settings_public_read" ON settings FOR SELECT USING (true);
 CREATE POLICY "settings_admin_update" ON settings FOR UPDATE
   USING (EXISTS (SELECT 1 FROM admin_profiles WHERE email = auth.email()));
 
--- ADMIN_PROFILES — own-row read, super admin full access (no self-referencing subquery)
+-- ADMIN_PROFILES — own-row read, super admin full access
 CREATE POLICY "admin_profiles_read" ON admin_profiles FOR SELECT
   USING (auth.email() = email);
 CREATE POLICY "admin_profiles_super_read" ON admin_profiles FOR SELECT
@@ -186,12 +179,8 @@ CREATE POLICY "candidates_upload" ON storage.objects FOR INSERT
 CREATE POLICY "candidates_update" ON storage.objects FOR UPDATE
   TO authenticated USING (bucket_id = 'candidates');
 
--- CLEANUP — remove old view if it exists
-DROP VIEW IF EXISTS public_candidates CASCADE;
-
 ------------------------------------------------------
--- 6. IMMUTABLE VOTES — prevent any modification after voting
--- Create a restricted role for vote incrementing (least privilege)
+-- 6. IMMUTABLE VOTES
 ------------------------------------------------------
 DO $$ BEGIN
   CREATE ROLE vote_counter WITH NOLOGIN PASSWORD 'vote-counter-role';
@@ -202,12 +191,8 @@ REVOKE ALL ON candidates FROM vote_counter;
 GRANT SELECT ON candidates TO vote_counter;
 GRANT UPDATE (vote_count) ON candidates TO vote_counter;
 
--- Block UPDATE/DELETE on votes and candidates for all application roles
--- INSERT on votes is still allowed for service_role (via /api/vote route)
 REVOKE UPDATE, DELETE ON votes FROM service_role, authenticated, anon;
 REVOKE UPDATE, DELETE ON candidates FROM service_role, authenticated, anon;
-
--- Explicitly ensure service_role can INSERT votes (for /api/vote during active voting)
 GRANT INSERT ON votes TO service_role;
 
 ------------------------------------------------------
@@ -229,9 +214,3 @@ BEGIN
   WHERE id = candidate_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
-------------------------------------------------------
--- ADMIN SETUP (manual step)
-------------------------------------------------------
--- Invite super admin in Supabase Dashboard > Authentication > Users > Invite user
--- Email: ifeoluwa.bankole@tech-u.edu.ng
