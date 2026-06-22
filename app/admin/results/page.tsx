@@ -67,31 +67,34 @@ export default function ResultsPage() {
     setDownloadingImage(false)
   }
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-full">
-      <Loader2 className="animate-spin" style={{ color: '#C9A84C' }} />
-    </div>
-  )
-
-  const electionName = '' // Will be set from settings if needed
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="animate-spin" style={{ color: '#C9A84C' }} />
+      </div>
+    )
+  }
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 sm:mb-8">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold gold-text mb-1">Election Results</h1>
           <p className="text-sm" style={{ color: 'rgba(245,240,232,0.45)' }}>
             {totalVoted} of {totalVoters} students voted ({totalVoters > 0 ? Math.round((totalVoted / totalVoters) * 100) : 0}% turnout)
           </p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={exportImage} disabled={downloadingImage}
-            className="btn-ghost px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button
+            onClick={exportImage}
+            disabled={downloadingImage}
+            className="btn-ghost px-5 py-2.5 rounded-xl text-sm flex items-center justify-center gap-2"
+          >
             {downloadingImage ? <Loader2 size={16} className="animate-spin" /> : <Image size={16} />}
             Download Image
           </button>
           {isSuperAdmin && (
-            <button onClick={exportCSV} className="btn-gold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+            <button onClick={exportCSV} className="btn-gold px-5 py-2.5 rounded-xl text-sm flex items-center justify-center gap-2">
               <Download size={16} /> Export CSV
             </button>
           )}
@@ -106,7 +109,7 @@ export default function ResultsPage() {
 
           return (
             <div key={position.id} className="glass-card rounded-2xl overflow-hidden">
-              <div className="px-6 py-5 border-b flex items-center justify-between"
+              <div className="px-5 sm:px-6 py-5 border-b flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
                 style={{ borderColor: 'rgba(201,168,76,0.1)' }}>
                 <div>
                   <h2 className="font-display text-xl font-semibold" style={{ color: '#F5F0E8' }}>
@@ -117,7 +120,7 @@ export default function ResultsPage() {
                   </p>
                 </div>
                 {winner && totalVotes > 0 && (
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl"
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl w-fit"
                     style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)' }}>
                     <Trophy size={14} style={{ color: '#C9A84C' }} />
                     <span className="text-sm font-semibold" style={{ color: '#C9A84C' }}>
@@ -127,24 +130,27 @@ export default function ResultsPage() {
                 )}
               </div>
 
-              <div className="p-6 space-y-4">
+              <div className="p-5 sm:p-6 space-y-4">
                 {candidates.length === 0 && (
                   <p className="text-sm text-center py-4" style={{ color: 'rgba(245,240,232,0.25)' }}>
                     No candidates added
                   </p>
                 )}
+
                 {candidates.map((candidate, idx) => {
                   const pct = totalVotes > 0 ? (candidate.vote_count / totalVotes) * 100 : 0
                   const isWinner = idx === 0 && totalVotes > 0
 
                   return (
-                    <div key={candidate.id} className="flex items-center gap-4">
-                      {/* Photo */}
+                    <div key={candidate.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                       <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0"
                         style={{ background: 'linear-gradient(135deg, #1A4A3A, #0A0A0F)' }}>
                         {candidate.photo_url ? (
-                          <img src={candidate.photo_url} alt={candidate.full_name}
-                            className="w-full h-full object-cover object-top" />
+                          <img
+                            src={candidate.photo_url}
+                            alt={candidate.full_name}
+                            className="w-full h-full object-cover object-top"
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <User size={20} style={{ color: 'rgba(201,168,76,0.3)' }} />
@@ -152,10 +158,9 @@ export default function ResultsPage() {
                         )}
                       </div>
 
-                      {/* Bar */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0 w-full">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-1.5">
+                          <div className="flex flex-wrap items-center gap-2">
                             <p className="text-sm font-medium" style={{ color: '#F5F0E8' }}>
                               {candidate.full_name}
                             </p>
@@ -177,13 +182,15 @@ export default function ResultsPage() {
                         </div>
                         <div className="h-2 rounded-full overflow-hidden"
                           style={{ background: 'rgba(201,168,76,0.08)' }}>
-                          <div className="h-full rounded-full transition-all duration-700"
+                          <div
+                            className="h-full rounded-full transition-all duration-700"
                             style={{
                               width: `${pct}%`,
                               background: isWinner
                                 ? 'linear-gradient(90deg, #9B7A2E, #E8C97A)'
-                                : 'linear-gradient(90deg, #1A4A3A, #3D8A6C)'
-                            }} />
+                                : 'linear-gradient(90deg, #1A4A3A, #3D8A6C)',
+                            }}
+                          />
                         </div>
                       </div>
                     </div>

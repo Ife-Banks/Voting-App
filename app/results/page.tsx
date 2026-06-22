@@ -56,7 +56,9 @@ export default function ResultsPage() {
     }
 
     init()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   async function handleLogout() {
@@ -74,7 +76,7 @@ export default function ResultsPage() {
 
   if (votingOpen) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="page-shell min-h-screen flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6"
             style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)' }}>
@@ -102,7 +104,7 @@ export default function ResultsPage() {
 
   if (!resultsPublic) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="page-shell min-h-screen flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6"
             style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)' }}>
@@ -129,35 +131,36 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b px-6 py-4 flex items-center justify-between"
-        style={{ borderColor: 'rgba(201,168,76,0.15)', background: 'rgba(10,10,15,0.8)', backdropFilter: 'blur(12px)' }}>
-        <div>
-          <h1 className="font-display text-xl font-semibold gold-text">{electionName}</h1>
-          {schoolName && (
-            <p className="text-xs" style={{ color: 'rgba(245,240,232,0.4)' }}>{schoolName}</p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          {userEmail && (
-            <span className="text-xs hidden sm:inline" style={{ color: 'rgba(245,240,232,0.4)' }}>
-              {userEmail}
-            </span>
-          )}
-          {userEmail ? (
-            <button onClick={handleLogout} className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2">
-              <LogOut size={14} /> Sign Out
-            </button>
-          ) : (
-            <Link href="/login" className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2">
-              Sign In
-            </Link>
-          )}
+    <div className="page-shell min-h-screen flex flex-col">
+      <header className="sticky top-0 z-30 border-b"
+        style={{ borderColor: 'rgba(201,168,76,0.15)', background: 'rgba(10,10,15,0.82)', backdropFilter: 'blur(18px)' }}>
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <div className="min-w-0">
+            <h1 className="font-display text-xl font-semibold gold-text truncate">{electionName}</h1>
+            {schoolName && (
+              <p className="text-xs truncate" style={{ color: 'rgba(245,240,232,0.4)' }}>{schoolName}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {userEmail && (
+              <span className="text-xs hidden sm:inline truncate" style={{ color: 'rgba(245,240,232,0.4)' }}>
+                {userEmail}
+              </span>
+            )}
+            {userEmail ? (
+              <button onClick={handleLogout} className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2 w-full sm:w-auto">
+                <LogOut size={14} /> Sign Out
+              </button>
+            ) : (
+              <Link href="/login" className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2">
+                Sign In
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto px-4 py-10">
+      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
             style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)' }}>
@@ -173,7 +176,7 @@ export default function ResultsPage() {
 
         <div className="space-y-8">
           {positions.length === 0 && (
-            <div className="text-center py-12">
+            <div className="text-center py-12 glass-card rounded-2xl">
               <p className="text-sm" style={{ color: 'rgba(245,240,232,0.35)' }}>
                 No positions or candidates found.
               </p>
@@ -187,7 +190,7 @@ export default function ResultsPage() {
 
             return (
               <div key={position.id} className="glass-card rounded-2xl overflow-hidden">
-                <div className="px-6 py-5 border-b flex items-center justify-between"
+                <div className="px-5 sm:px-6 py-5 border-b flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
                   style={{ borderColor: 'rgba(201,168,76,0.1)' }}>
                   <div>
                     <h3 className="font-display text-xl font-semibold" style={{ color: '#F5F0E8' }}>
@@ -198,7 +201,7 @@ export default function ResultsPage() {
                     </p>
                   </div>
                   {winner && totalVotes > 0 && (
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-xl"
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-xl w-fit"
                       style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)' }}>
                       <Trophy size={14} style={{ color: '#C9A84C' }} />
                       <span className="text-sm font-semibold" style={{ color: '#C9A84C' }}>
@@ -208,24 +211,27 @@ export default function ResultsPage() {
                   )}
                 </div>
 
-                <div className="p-6 space-y-5">
+                <div className="p-5 sm:p-6 space-y-5">
                   {candidates.length === 0 && (
                     <p className="text-sm text-center py-4" style={{ color: 'rgba(245,240,232,0.25)' }}>
                       No candidates
                     </p>
                   )}
+
                   {candidates.map((candidate, idx) => {
                     const pct = totalVotes > 0 ? (candidate.vote_count / totalVotes) * 100 : 0
                     const isWinner = idx === 0 && totalVotes > 0
 
                     return (
-                      <div key={candidate.id} className="flex items-center gap-4">
-                        {/* Photo */}
+                      <div key={candidate.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                         <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0"
                           style={{ background: 'linear-gradient(135deg, #1A4A3A, #0A0A0F)' }}>
                           {candidate.photo_url ? (
-                            <img src={candidate.photo_url} alt={candidate.full_name}
-                              className="w-full h-full object-cover object-top" />
+                            <img
+                              src={candidate.photo_url}
+                              alt={candidate.full_name}
+                              className="w-full h-full object-cover object-top"
+                            />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <User size={20} style={{ color: 'rgba(201,168,76,0.3)' }} />
@@ -233,10 +239,9 @@ export default function ResultsPage() {
                           )}
                         </div>
 
-                        {/* Info + Bar */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0 w-full">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-1.5">
+                            <div className="flex flex-wrap items-center gap-2">
                               <p className="text-sm font-medium" style={{ color: '#F5F0E8' }}>
                                 {candidate.full_name}
                               </p>
@@ -258,13 +263,15 @@ export default function ResultsPage() {
                           </div>
                           <div className="h-2.5 rounded-full overflow-hidden"
                             style={{ background: 'rgba(201,168,76,0.08)' }}>
-                            <div className="h-full rounded-full transition-all duration-700"
+                            <div
+                              className="h-full rounded-full transition-all duration-700"
                               style={{
                                 width: `${pct}%`,
                                 background: isWinner
                                   ? 'linear-gradient(90deg, #9B7A2E, #E8C97A)'
-                                  : 'linear-gradient(90deg, #1A4A3A, #3D8A6C)'
-                              }} />
+                                  : 'linear-gradient(90deg, #1A4A3A, #3D8A6C)',
+                              }}
+                            />
                           </div>
                         </div>
                       </div>

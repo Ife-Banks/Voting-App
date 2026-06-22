@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import type { Position, Candidate, VoteSelection } from '@/lib/types'
+import type { Position, VoteSelection } from '@/lib/types'
 import { CheckCircle2, ChevronRight, ChevronLeft, LogOut, AlertCircle, Loader2, User, Trophy } from 'lucide-react'
 import Image from 'next/image'
 
@@ -25,55 +25,73 @@ export default function VotePage() {
   useEffect(() => {
     const supabase = createClient()
     let cancelled = false
+
     async function init() {
       try {
-      // Check session via API
-      const res = await fetch('/api/auth/me')
-      if (!res.ok) { router.push('/login'); return }
-      const data = await res.json()
-      if (!data?.user) { router.push('/login'); return }
+        // Check session via API
+        const res = await fetch('/api/auth/me')
+        if (!res.ok) {
+          router.push('/login')
+          return
+        }
 
-      // Redirect admin
-      if (data.type === 'admin') {
-        router.push('/admin/dashboard'); return
+        const data = await res.json()
+        if (!data?.user) {
+          router.push('/login')
+          return
+        }
+
+        // Redirect admin
+        if (data.type === 'admin') {
+          router.push('/admin/dashboard')
+          return
+        }
+
+        setUserEmail(data.user.email)
+
+        // Check settings
+        const { data: settings } = await supabase.from('settings').select('*').single()
+        if (settings) {
+          setVotingOpen(settings.voting_open)
+          setResultsPublic(settings.results_public ?? false)
+          setElectionName(settings.election_name)
+        }
+
+        // Check if already voted, but allow if results are public so they can still view results
+        const statusRes = await fetch('/api/student/status')
+        const statusData = await statusRes.json()
+        const hasVoted = statusData?.has_voted
+        const rp = settings?.results_public ?? false
+
+        if (hasVoted && !rp && settings?.voting_open) {
+          setAlreadyVoted(true)
+          setLoading(false)
+          setTimeout(async () => {
+            await fetch('/api/auth/logout', { method: 'POST' })
+            window.location.href = '/login'
+          }, 3000)
+          return
+        }
+
+        // If results_public=true, don't block on has_voted and allow them to see results
+        const { data: posData } = await supabase
+          .from('positions')
+          .select('*, candidates(*)')
+          .order('display_order')
+
+        if (posData) setPositions(posData)
+        setLoading(false)
+      } catch {
+        if (!cancelled) {
+          router.push('/login')
+        }
       }
-
-      setUserEmail(data.user.email)
-
-      // Check settings
-      const { data: settings } = await supabase.from('settings').select('*').single()
-      if (settings) {
-        setVotingOpen(settings.voting_open)
-        setResultsPublic(settings.results_public ?? false)
-        setElectionName(settings.election_name)
-      }
-
-      // Check if already voted — but allow if results are public (they can view results)
-      const statusRes = await fetch('/api/student/status')
-      const statusData = await statusRes.json()
-      const hasVoted = statusData?.has_voted
-      const rp = settings?.results_public ?? false
-      if (hasVoted && !rp) {
-        setAlreadyVoted(true); setLoading(false)
-        setTimeout(async () => {
-          await fetch('/api/auth/logout', { method: 'POST' })
-          window.location.href = '/login'
-        }, 3000)
-        return
-      }
-      // If results_public=true, don't block on has_voted — allow them to see results
-
-      // Load positions with candidates
-      const { data: posData } = await supabase
-  .from('positions').select('*, candidates(*)').order('display_order')
-      if (posData) setPositions(posData)
-      setLoading(false)
-    } catch {
-      if (!cancelled) { router.push('/login') }
     }
-    }
+
     init()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   function selectCandidate(positionId: string, candidateId: string) {
@@ -84,11 +102,13 @@ export default function VotePage() {
     setSubmitting(true)
     setError('')
 
-    const voteRows = positions.map(pos => ({
-      student_email: userEmail,
-      position_id: pos.id,
-      candidate_id: selections[pos.id] ?? null,
-    })).filter(v => v.candidate_id)
+    const voteRows = positions
+      .map(pos => ({
+        student_email: userEmail,
+        position_id: pos.id,
+        candidate_id: selections[pos.id] ?? null,
+      }))
+      .filter(v => v.candidate_id)
 
     try {
       const res = await fetch('/api/vote', {
@@ -98,6 +118,7 @@ export default function VotePage() {
       })
       const result = await res.json()
       if (!res.ok) throw new Error(result.error)
+
       setSubmitted(true)
       setTimeout(async () => {
         await fetch('/api/auth/logout', { method: 'POST' })
@@ -106,6 +127,7 @@ export default function VotePage() {
     } catch (err: any) {
       setError(err.message ?? 'Failed to submit votes. Please try again.')
     }
+
     setSubmitting(false)
   }
 
@@ -122,10 +144,9 @@ export default function VotePage() {
     )
   }
 
-  // Already voted screen
   if (alreadyVoted || submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="page-shell min-h-screen flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="inline-flex items-center justify-center w-24 h-24 rounded-full mb-8"
             style={{ background: 'linear-gradient(135deg, #1A4A3A, #2D6B54)', border: '2px solid #C9A84C' }}>
@@ -150,11 +171,10 @@ export default function VotePage() {
     )
   }
 
-  // Voting closed — show results if published, otherwise show not out yet
   if (!votingOpen) {
     if (resultsPublic) {
       return (
-        <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="page-shell min-h-screen flex items-center justify-center px-4">
           <div className="text-center max-w-md">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6"
               style={{ background: 'rgba(61,138,108,0.1)', border: '1px solid rgba(61,138,108,0.2)' }}>
@@ -176,8 +196,9 @@ export default function VotePage() {
         </div>
       )
     }
+
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="page-shell min-h-screen flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6"
             style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)' }}>
@@ -203,31 +224,30 @@ export default function VotePage() {
   const allVoted = positions.every(p => selections[p.id])
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="border-b px-6 py-4 flex items-center justify-between"
-        style={{ borderColor: 'rgba(201,168,76,0.15)', background: 'rgba(10,10,15,0.8)', backdropFilter: 'blur(12px)' }}>
-        <div>
-          <h1 className="font-display text-xl font-semibold gold-text">{electionName}</h1>
-          <p className="text-xs" style={{ color: 'rgba(245,240,232,0.4)' }}>{userEmail}</p>
+    <div className="page-shell min-h-screen flex flex-col">
+      <header className="sticky top-0 z-30 border-b"
+        style={{ borderColor: 'rgba(201,168,76,0.15)', background: 'rgba(10,10,15,0.82)', backdropFilter: 'blur(18px)' }}>
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <div className="min-w-0">
+            <h1 className="font-display text-xl font-semibold gold-text truncate">{electionName}</h1>
+            <p className="text-xs truncate" style={{ color: 'rgba(245,240,232,0.4)' }}>{userEmail}</p>
+          </div>
+          <button onClick={handleLogout} className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2 w-full sm:w-auto">
+            <LogOut size={14} /> Sign Out
+          </button>
         </div>
-        <button onClick={handleLogout} className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2">
-          <LogOut size={14} /> Sign Out
-        </button>
       </header>
 
-      <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
-        {/* One-time login warning */}
-        <div className="mb-6 p-4 rounded-xl flex items-start gap-3"
+      <div className="flex-1 mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        <div className="glass-card mb-6 p-4 rounded-2xl flex items-start gap-3"
           style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)' }}>
           <AlertCircle size={18} style={{ color: '#C9A84C', marginTop: 2 }} />
           <p className="text-xs leading-relaxed" style={{ color: 'rgba(245,240,232,0.7)' }}>
-            <strong style={{ color: '#C9A84C' }}>One-time access:</strong> Do not log out until you have voted. 
+            <strong style={{ color: '#C9A84C' }}>One-time access:</strong> Do not log out until you have voted.
             If you leave or refresh this page before submitting, you will not be able to re-enter.
           </p>
         </div>
 
-        {/* Progress */}
         <div className="mb-10">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium" style={{ color: 'rgba(245,240,232,0.6)' }}>
@@ -239,22 +259,27 @@ export default function VotePage() {
           </div>
           <div className="flex gap-2">
             {positions.map((pos, i) => (
-              <button key={pos.id} onClick={() => setCurrentStep(i)}
+              <button
+                key={pos.id}
+                onClick={() => setCurrentStep(i)}
                 className="step-dot flex-1 h-1.5 rounded-full cursor-pointer"
                 style={{
-                  background: i < currentStep ? '#3D8A6C'
-                    : i === currentStep ? '#C9A84C'
-                    : selections[pos.id] ? '#2D6B54'
-                    : 'rgba(201,168,76,0.15)',
+                  background: i < currentStep
+                    ? '#3D8A6C'
+                    : i === currentStep
+                      ? '#C9A84C'
+                      : selections[pos.id]
+                        ? '#2D6B54'
+                        : 'rgba(201,168,76,0.15)',
                   maxWidth: '100%',
                   height: '4px',
                   borderRadius: '2px',
-                }} />
+                }}
+              />
             ))}
           </div>
         </div>
 
-        {/* Current position */}
         {currentPosition && (
           <div className="animate-fade-up">
             <div className="mb-8">
@@ -262,30 +287,41 @@ export default function VotePage() {
                 {currentPosition.title}
               </h2>
               {currentPosition.description && (
-                <p className="text-sm" style={{ color: 'rgba(245,240,232,0.5)' }}>{currentPosition.description}</p>
+                <p className="text-sm" style={{ color: 'rgba(245,240,232,0.5)' }}>
+                  {currentPosition.description}
+                </p>
               )}
               <p className="text-xs mt-2" style={{ color: 'rgba(201,168,76,0.7)' }}>
                 Select one candidate below
               </p>
             </div>
 
-            {/* Candidates grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-5 mb-8">
               {(currentPosition.candidates ?? []).map(candidate => {
                 const isSelected = selections[currentPosition.id] === candidate.id
+
                 return (
-                  <div key={candidate.id}
+                  <div
+                    key={candidate.id}
                     className={`candidate-card glass-card rounded-2xl overflow-hidden ${isSelected ? 'selected' : ''}`}
-                    onClick={() => selectCandidate(currentPosition.id, candidate.id)}>
-                    {/* Photo */}
+                    onClick={() => selectCandidate(currentPosition.id, candidate.id)}
+                  >
                     <div className="h-48 relative overflow-hidden bg-[#1A4A3A]">
                       {candidate.photo_url ? (
                         <>
-                          <img src={candidate.photo_url} alt=""
-                            className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60" />
+                          <img
+                            src={candidate.photo_url}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
+                          />
                           <div className="absolute inset-0 flex items-center justify-center p-6">
-                            <Image src={candidate.photo_url} alt={candidate.full_name}
-                              width={200} height={200} className="object-contain w-auto h-auto max-w-full max-h-full rounded-lg shadow-2xl" />
+                            <Image
+                              src={candidate.photo_url}
+                              alt={candidate.full_name}
+                              width={200}
+                              height={200}
+                              className="object-contain w-auto h-auto max-w-full max-h-full rounded-lg shadow-2xl"
+                            />
                           </div>
                         </>
                       ) : (
@@ -294,23 +330,26 @@ export default function VotePage() {
                         </div>
                       )}
                       {isSelected && (
-                        <div className="absolute inset-0 flex items-end p-4 pointer-events-none"
-                          style={{ background: 'linear-gradient(to top, rgba(201,168,76,0.3), transparent)' }}>
-                        </div>
+                        <div
+                          className="absolute inset-0 flex items-end p-4 pointer-events-none"
+                          style={{ background: 'linear-gradient(to top, rgba(201,168,76,0.3), transparent)' }}
+                        />
                       )}
                     </div>
-                    {/* Info */}
+
                     <div className="p-4">
                       <h3 className="font-display text-lg font-semibold mb-1" style={{ color: '#F5F0E8' }}>
                         {candidate.full_name}
                       </h3>
                       {candidate.class && (
-                        <p className="text-xs mb-2" style={{ color: '#C9A84C' }}>{candidate.class}</p>
+                        <p className="text-xs mb-2" style={{ color: '#C9A84C' }}>
+                          {candidate.class}
+                        </p>
                       )}
                       {candidate.manifesto && (
                         <p className="text-xs leading-relaxed" style={{ color: 'rgba(245,240,232,0.5)' }}>
                           {candidate.manifesto.length > 120
-                            ? candidate.manifesto.slice(0, 120) + '…'
+                            ? `${candidate.manifesto.slice(0, 120)}...`
                             : candidate.manifesto}
                         </p>
                       )}
@@ -322,10 +361,12 @@ export default function VotePage() {
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="flex items-center justify-between">
-          <button onClick={() => setCurrentStep(s => s - 1)} disabled={currentStep === 0}
-            className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center gap-2 disabled:opacity-30">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            onClick={() => setCurrentStep(s => s - 1)}
+            disabled={currentStep === 0}
+            className="btn-ghost px-5 py-3 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-30"
+          >
             <ChevronLeft size={16} /> Previous
           </button>
 
@@ -336,9 +377,14 @@ export default function VotePage() {
                   <AlertCircle size={12} /> {error}
                 </p>
               )}
-              <button onClick={handleSubmit} disabled={submitting || !allVoted}
-                className="btn-gold px-8 py-3 rounded-xl text-sm flex items-center gap-2 disabled:opacity-40">
-                {submitting ? <><Loader2 size={16} className="animate-spin" /> Submitting&hellip;</> : <><CheckCircle2 size={16} /> Submit All Votes</>}
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || !allVoted}
+                className="btn-gold px-8 py-3 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-40"
+              >
+                {submitting
+                  ? <><Loader2 size={16} className="animate-spin" /> Submitting&hellip;</>
+                  : <><CheckCircle2 size={16} /> Submit All Votes</>}
               </button>
               {!allVoted && (
                 <p className="text-xs" style={{ color: 'rgba(201,168,76,0.6)' }}>
@@ -347,8 +393,10 @@ export default function VotePage() {
               )}
             </div>
           ) : (
-            <button onClick={() => setCurrentStep(s => s + 1)}
-              className="btn-gold px-5 py-3 rounded-xl text-sm flex items-center gap-2">
+            <button
+              onClick={() => setCurrentStep(s => s + 1)}
+              className="btn-gold px-5 py-3 rounded-xl text-sm flex items-center justify-center gap-2"
+            >
               Next <ChevronRight size={16} />
             </button>
           )}

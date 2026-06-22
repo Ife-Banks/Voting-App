@@ -135,7 +135,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   )
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex lg:gap-4 lg:p-4">
       {/* Mobile backdrop */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 lg:hidden"
@@ -186,12 +186,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Desktop sidebar */}
       <aside className={`hidden lg:flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'} shrink-0 border-r`}
-        style={{ borderColor: 'rgba(201,168,76,0.12)', background: 'rgba(10,10,15,0.95)' }}>
+        style={{
+          borderColor: 'rgba(201,168,76,0.12)',
+          background: 'rgba(10,10,15,0.95)',
+          boxShadow: '0 18px 48px rgba(0,0,0,0.26)',
+        }}>
         {sidebarContent}
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-auto">
+      <main className="flex-1 flex flex-col min-w-0 overflow-auto lg:rounded-[28px] lg:border lg:border-[rgba(201,168,76,0.12)] lg:shadow-[0_18px_48px_rgba(0,0,0,0.26)]"
+        style={{ background: 'rgba(10,10,15,0.55)', backdropFilter: 'blur(18px)' }}>
         {/* Top bar with mobile menu + collapse buttons */}
         <div className="sticky top-0 z-30 flex items-center gap-3 px-4 lg:px-6 py-3 border-b lg:hidden"
           style={{ borderColor: 'rgba(201,168,76,0.12)', background: 'rgba(10,10,15,0.95)', backdropFilter: 'blur(12px)' }}>
@@ -219,9 +224,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <div className="flex-1 p-4 sm:p-6 lg:p-8">
-          <AdminContext.Provider value={{ profile: adminProfile, loading: profileLoading }}>
-            {children}
-          </AdminContext.Provider>
+          <div className="mx-auto w-full max-w-[1680px]">
+            <AdminContext.Provider value={{ profile: adminProfile, loading: profileLoading }}>
+              {children}
+            </AdminContext.Provider>
+          </div>
         </div>
       </main>
     </div>

@@ -48,6 +48,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No student found with this matric number' }, { status: 404 })
     }
 
+    const { data: settings } = await supabase
+      .from('settings')
+      .select('voting_open')
+      .eq('id', 1)
+      .maybeSingle()
+
+    if (!settings?.voting_open) {
+      logAuth('request-otp', matric_number, 'VOTING_CLOSED')
+      return NextResponse.json({ voting_closed: true }, { status: 200 })
+    }
+
+    if (student.has_voted) {
+      logAuth('request-otp', matric_number, 'ALREADY_VOTED')
+      return NextResponse.json({ error: 'You have already voted' }, { status: 401 })
+    }
+
     const otp = randomInt(100000, 999999).toString()
     const expiresAt = new Date(Date.now() + 60 * 1000).toISOString()
 

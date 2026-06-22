@@ -82,9 +82,7 @@ export async function POST(req: NextRequest) {
       .eq('id', 1)
       .maybeSingle()
 
-    const resultsPublic = settings?.results_public ?? false
-
-    if (student.has_voted && !resultsPublic) {
+    if (settings?.voting_open && student.has_voted) {
       logAuth('verify-otp', matric_number, 'ALREADY_VOTED')
       return NextResponse.json({ error: 'You have already voted' }, { status: 401 })
     }
