@@ -151,7 +151,7 @@ export default function LoginPage() {
                   value={matric_number}
                   onChange={e => setMatricNumber(e.target.value.toUpperCase())}
                   className="input-field w-full px-4 py-3 rounded-xl text-sm"
-                  placeholder="e.g. ENG/2020/001"
+                  placeholder="e.g. 125/22/1/0018"
                   required
                 />
               </div>
