@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import { AdminContext } from '@/lib/admin-context'
 import type { AdminProfile } from '@/lib/types'
@@ -96,9 +97,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <>
       <div className="px-4 lg:px-6 py-4 lg:py-6 border-b flex items-center gap-3"
         style={{ borderColor: 'rgba(201,168,76,0.12)' }}>
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: 'linear-gradient(135deg, #1A4A3A, #2D6B54)', border: '1px solid rgba(201,168,76,0.3)' }}>
-          <Vote size={18} style={{ color: '#C9A84C' }} />
+        <div className="relative w-9 h-9 shrink-0">
+          <Image src="/image.png" alt="Logo" fill className="object-contain rounded-xl" />
         </div>
         {!sidebarCollapsed && (
           <div className="overflow-hidden">
@@ -148,9 +148,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         style={{ background: 'rgba(10,10,15,0.98)', borderRight: '1px solid rgba(201,168,76,0.12)' }}>
         <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: 'rgba(201,168,76,0.12)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: 'linear-gradient(135deg, #1A4A3A, #2D6B54)', border: '1px solid rgba(201,168,76,0.3)' }}>
-              <Vote size={18} style={{ color: '#C9A84C' }} />
+            <div className="relative w-9 h-9 rounded-xl shrink-0"
+              style={{ border: '1px solid rgba(201,168,76,0.3)' }}>
+              <Image src="/image.png" alt="Logo" fill className="object-contain rounded-xl" />
             </div>
             <div>
               <p className="text-xs font-semibold gold-text leading-tight">{electionName}</p>
@@ -205,9 +205,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Menu size={20} style={{ color: '#F5F0E8' }} />
           </button>
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: 'linear-gradient(135deg, #1A4A3A, #2D6B54)' }}>
-              <Vote size={14} style={{ color: '#C9A84C' }} />
+            <div className="relative w-7 h-7 shrink-0">
+              <Image src="/image.png" alt="Logo" fill className="object-contain rounded-lg" />
             </div>
             <p className="text-sm font-semibold gold-text truncate">{electionName}</p>
           </div>

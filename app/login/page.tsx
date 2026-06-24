@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import Image from 'next/image'
 import { Shield, Vote, AlertCircle, Loader2, Hash } from 'lucide-react'
 
 export default function LoginPage() {
@@ -97,9 +98,8 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-8 mb-10">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6"
-                style={{ background: 'linear-gradient(135deg, #1A4A3A, #2D6B54)', border: '1px solid rgba(76,175,80,0.3)' }}>
-                <Vote size={36} style={{ color: '#4CAF50' }} />
+              <div className="relative w-20 h-20 mb-6">
+                <Image src="/image.png" alt="Logo" fill className="object-contain rounded-2xl" />
               </div>
               <h1 className="text-4xl sm:text-5xl font-display font-bold green-text mb-3">
                 {settings?.election_name ?? 'ESSA Elections'}

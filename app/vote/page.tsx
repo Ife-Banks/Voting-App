@@ -228,9 +228,14 @@ export default function VotePage() {
       <header className="sticky top-0 z-30 border-b"
         style={{ borderColor: 'rgba(201,168,76,0.15)', background: 'rgba(10,10,15,0.82)', backdropFilter: 'blur(18px)' }}>
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <div className="min-w-0">
-            <h1 className="font-display text-xl font-semibold gold-text truncate">{electionName}</h1>
-            <p className="text-xs truncate" style={{ color: 'rgba(245,240,232,0.4)' }}>{userEmail}</p>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative w-10 h-10 shrink-0">
+              <Image src="/image.png" alt="Logo" fill className="object-contain" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-display text-xl font-semibold green-text truncate">{electionName}</h1>
+              <p className="text-xs truncate" style={{ color: 'rgba(245,240,232,0.4)' }}>{userEmail}</p>
+            </div>
           </div>
           <button onClick={handleLogout} className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2 w-full sm:w-auto">
             <LogOut size={14} /> Sign Out
