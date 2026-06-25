@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { AdminProfile } from '@/lib/types'
+import { X, Copy, CheckCircle2, Loader2 } from 'lucide-react'
+import Link from 'next/link'
 
 export default function AdminsPage() {
   const [admins, setAdmins] = useState<AdminProfile[]>([])
@@ -10,6 +12,8 @@ export default function AdminsPage() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteName, setInviteName] = useState('')
   const [inviting, setInviting] = useState(false)
+  const [inviteResult, setInviteResult] = useState<{ link: string; sent: boolean } | null>(null)
+  const [copied, setCopied] = useState(false)
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState<'success' | 'error'>('success')
   const [deleting, setDeleting] = useState<string | null>(null)
@@ -40,10 +44,7 @@ export default function AdminsPage() {
     setInviting(false)
 
     if (data.success) {
-      setMessageType('success')
-      setMessage(
-        `Invited! ${data.emailSent ? 'Email sent.' : 'Share the link manually:'}\n${data.setupLink}`
-      )
+      setInviteResult({ link: data.setupLink, sent: data.emailSent })
       setInviteEmail('')
       setInviteName('')
       setShowInvite(false)
@@ -75,6 +76,18 @@ export default function AdminsPage() {
     }
   }
 
+  function copyLink() {
+    if (!inviteResult) return
+    navigator.clipboard.writeText(inviteResult.link)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  function closeModal() {
+    setInviteResult(null)
+    setCopied(false)
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -91,7 +104,7 @@ export default function AdminsPage() {
         <div className={`mb-6 p-4 rounded-xl text-sm ${
           messageType === 'success' ? 'bg-green-900/30 text-green-300 border border-green-800/50' :
           'bg-red-900/30 text-red-300 border border-red-800/50'
-        } whitespace-pre-wrap`}>
+        }`}>
           {message}
         </div>
       )}
@@ -186,6 +199,56 @@ export default function AdminsPage() {
           {admins.length === 0 && (
             <p className="text-gray-500 text-center py-8">No admins found.</p>
           )}
+        </div>
+      )}
+
+      {/* Invite link modal */}
+      {inviteResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }}>
+          <div className="bg-[#13131A] border border-[#20203A] rounded-2xl p-6 w-full max-w-md relative">
+            <button onClick={closeModal}
+              className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-white/5 cursor-pointer"
+              style={{ color: 'rgba(245,240,232,0.4)' }}>
+              <X size={18} />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4"
+                style={{ background: 'rgba(76,175,80,0.15)', border: '1px solid rgba(76,175,80,0.3)' }}>
+                <CheckCircle2 size={28} style={{ color: '#4CAF50' }} />
+              </div>
+              <h2 className="text-xl font-semibold text-white mb-1">Admin Invited!</h2>
+              {inviteResult.sent ? (
+                <p className="text-sm" style={{ color: 'rgba(76,175,80,0.7)' }}>
+                  An email has been sent to the admin.
+                </p>
+              ) : (
+                <p className="text-sm text-gray-400">
+                  Copy and share the setup link with the new admin.
+                </p>
+              )}
+            </div>
+
+            <div className="bg-[#1A1A24] rounded-xl p-4 mb-4">
+              <p className="text-xs text-gray-500 mb-2">Setup Link</p>
+              <p className="text-sm text-gray-300 break-all leading-relaxed">
+                {inviteResult.link}
+              </p>
+            </div>
+
+            <button
+              onClick={copyLink}
+              className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer"
+              style={{ background: copied ? 'rgba(76,175,80,0.2)' : '#4CAF50', color: copied ? '#4CAF50' : '#0A1A0A', border: copied ? '1px solid rgba(76,175,80,0.3)' : 'none' }}
+            >
+              {copied ? <><CheckCircle2 size={16} /> Copied!</> : <><Copy size={16} /> Copy Link</>}
+            </button>
+
+            <p className="text-center text-xs text-gray-600 mt-3">
+              This link expires in 3 days.
+            </p>
+          </div>
         </div>
       )}
     </div>

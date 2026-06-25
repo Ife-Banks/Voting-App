@@ -21,7 +21,7 @@ export interface InvitePayload {
 }
 
 export async function createInviteToken(email: string, name: string): Promise<string> {
-  const payload: InvitePayload = { email, name, exp: Date.now() + 7 * 24 * 60 * 60 * 1000 }
+  const payload: InvitePayload = { email, name, exp: Date.now() + 3 * 24 * 60 * 60 * 1000 }
   const encoded = btoa(JSON.stringify(payload))
   const secret = await getSecret()
   const sig = await crypto.subtle.sign('HMAC', secret, new TextEncoder().encode(encoded))

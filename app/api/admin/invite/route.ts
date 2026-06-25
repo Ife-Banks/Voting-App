@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient, createAuthAdminClient } from '@/lib/supabase-server'
 import { createInviteToken } from '@/lib/invite'
-import { sendInviteEmail } from '@/lib/email'
+import { sendAdminInviteEmail } from '@/lib/mailgun'
 import { logAuth, logError } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     steps.push('token-created')
 
     steps.push('before-email')
-    const emailSent = await sendInviteEmail(normalizedEmail, name, setupLink)
+    const emailSent = await sendAdminInviteEmail(normalizedEmail, name, setupLink)
     steps.push('emailSent=' + emailSent)
 
     logAuth('admin-invite', normalizedEmail, `SUCCESS (${Date.now() - start}ms)`)
