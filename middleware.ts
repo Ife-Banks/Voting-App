@@ -15,6 +15,7 @@ function buildCSP(): string {
     `img-src 'self' data: blob: https://${host}`,
     `font-src 'self' data: https://fonts.gstatic.com`,
     `connect-src 'self' https://${host} wss://${host} https://vercel.live`,
+    `frame-src 'self' https://vercel.live`,
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
