@@ -37,18 +37,35 @@ async function getCallerAdmin(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  console.log('[admin/positions] Request received')
   const admin = await getCallerAdmin(req)
+  console.log('[admin/positions] admin:', admin)
+
   if (!admin) {
+    console.log('[admin/positions] Not authenticated as admin')
     return NextResponse.json({ error: 'Not authenticated as admin' }, { status: 401 })
   }
 
-  const supabase = createAdminClient()
-  const body = await req.json()
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+
   const { action } = body
+  console.log('[admin/positions] action:', action)
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('[admin/positions] SUPABASE_SERVICE_ROLE_KEY not set')
+    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
+  }
+
+  const supabase = createAdminClient()
 
   try {
     if (action === 'add_position') {
-      const { title, description, display_order } = body
+      const { title, description, display_order } = body as { title: string; description?: string; display_order?: number }
       const { data, error } = await supabase.from('positions').insert({
         title, description: description ?? null, display_order: display_order ?? 0,
       }).select().single()
@@ -57,7 +74,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'update_position') {
-      const { id, title, description } = body
+      const { id, title, description } = body as { id: string; title: string; description?: string }
       const { data, error } = await supabase.from('positions').update({
         title, description: description ?? null,
       }).eq('id', id).select().single()
@@ -66,14 +83,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'delete_position') {
-      const { id } = body
+      const { id } = body as { id: string }
       const { error } = await supabase.from('positions').delete().eq('id', id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true })
     }
 
     if (action === 'add_candidate') {
-      const { position_id, full_name, class: cls, manifesto, photo_url } = body
+      const { position_id, full_name, class: cls, manifesto, photo_url } = body as {
+        position_id: string; full_name: string; class?: string; manifesto?: string; photo_url?: string
+      }
       const { data, error } = await supabase.from('candidates').insert({
         position_id, full_name, class: cls ?? null, manifesto: manifesto ?? null,
         photo_url: photo_url ?? null,
@@ -83,7 +102,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'update_candidate') {
-      const { id, full_name, class: cls, manifesto, photo_url } = body
+      const { id, full_name, class: cls, manifesto, photo_url } = body as {
+        id: string; full_name: string; class?: string; manifesto?: string; photo_url?: string
+      }
       const { data, error } = await supabase.from('candidates').update({
         full_name, class: cls ?? null, manifesto: manifesto ?? null, photo_url: photo_url ?? null,
       }).eq('id', id).select().single()
@@ -92,7 +113,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'delete_candidate') {
-      const { id } = body
+      const { id } = body as { id: string }
       const { error } = await supabase.from('candidates').delete().eq('id', id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ success: true })
@@ -101,6 +122,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'unknown'
+    console.error('[admin/positions] Error:', msg)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
