@@ -33,11 +33,17 @@ export default function PositionsPage() {
   async function addPosition() {
     if (!newPositionTitle.trim()) return
     setAddingPosition(true)
-    const supabase = createClient()
-    const { data } = await supabase.from('positions').insert({
-      title: newPositionTitle, description: newPositionDesc,
-      display_order: positions.length
-    }).select().single()
+    const res = await fetch('/api/admin/positions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'add_position',
+        title: newPositionTitle,
+        description: newPositionDesc,
+        display_order: positions.length,
+      }),
+    })
+    const { data } = await res.json()
     if (data) {
       setPositions(prev => [...prev, { ...data, candidates: [] }])
       setNewPositionTitle(''); setNewPositionDesc(''); setShowNewPosition(false)
@@ -47,8 +53,11 @@ export default function PositionsPage() {
 
   async function deletePosition(id: string) {
     if (!confirm('Delete this position and all its candidates?')) return
-    const supabase = createClient()
-    await supabase.from('positions').delete().eq('id', id)
+    await fetch('/api/admin/positions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_position', id }),
+    })
     setPositions(prev => prev.filter(p => p.id !== id))
   }
 
@@ -145,16 +154,22 @@ function PositionCard({
   const [editingCandidateId, setEditingCandidateId] = useState<string | null>(null)
 
   async function savePosition() {
-    const supabase = createClient()
-    await supabase.from('positions').update({ title, description: desc }).eq('id', position.id)
+    await fetch('/api/admin/positions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_position', id: position.id, title, description: desc }),
+    })
     onUpdatePosition({ title, description: desc })
     setEditing(false)
   }
 
   async function deleteCandidate(candidateId: string) {
     if (!confirm('Remove this candidate?')) return
-    const supabase = createClient()
-    await supabase.from('candidates').delete().eq('id', candidateId)
+    await fetch('/api/admin/positions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_candidate', id: candidateId }),
+    })
     onUpdateCandidates((position.candidates ?? []).filter(c => c.id !== candidateId))
   }
 
@@ -376,14 +391,20 @@ function CandidateForm({ positionId, candidate, onSave, onCancel }: {
     }
 
     if (isEditing) {
-      const { data } = await supabase.from('candidates')
-        .update({ full_name: name, class: cls, manifesto, photo_url })
-        .eq('id', candidate!.id).select().single()
+      const res = await fetch('/api/admin/positions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_candidate', id: candidate!.id, full_name: name, class: cls, manifesto, photo_url }),
+      })
+      const { data } = await res.json()
       if (data) onSave(data)
     } else {
-      const { data } = await supabase.from('candidates').insert({
-        position_id: positionId, full_name: name, class: cls, manifesto, photo_url
-      }).select().single()
+      const res = await fetch('/api/admin/positions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add_candidate', position_id: positionId, full_name: name, class: cls, manifesto, photo_url }),
+      })
+      const { data } = await res.json()
       if (data) onSave(data)
     }
     setSaving(false)
