@@ -45,9 +45,12 @@ export default function AdminDashboard() {
   async function toggleVoting() {
     if (!settings) return
     setToggling(true)
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('settings').update({ voting_open: !settings.voting_open }).eq('id', 1).select().single()
+    const res = await fetch('/api/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggle_voting', voting_open: !settings.voting_open }),
+    })
+    const { data } = await res.json()
     if (data) setSettings(data)
     setToggling(false)
   }
@@ -55,17 +58,24 @@ export default function AdminDashboard() {
   async function toggleResultsPublic() {
     if (!settings) return
     setTogglingResults(true)
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('settings').update({ results_public: !settings.results_public }).eq('id', 1).select().single()
+    const res = await fetch('/api/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggle_results_public', results_public: !settings.results_public }),
+    })
+    const { data } = await res.json()
     if (data) setSettings(data)
     setTogglingResults(false)
   }
 
   async function saveSettings() {
-    const supabase = createClient()
-    await supabase.from('settings').update({ election_name: electionName, school_name: schoolName }).eq('id', 1)
-    setSettings(prev => prev ? { ...prev, election_name: electionName, school_name: schoolName } : null)
+    const res = await fetch('/api/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save_settings', election_name: electionName, school_name: schoolName }),
+    })
+    const { data } = await res.json()
+    if (data) setSettings(data)
     setEditingName(false)
   }
 
@@ -123,10 +133,11 @@ export default function AdminDashboard() {
               {isSuperAdmin && (
                 <button onClick={async () => {
                   setEndingSession(true)
-                  const supabase = createClient()
-                  await supabase.from('voting_sessions')
-                    .update({ is_active: false, ended_at: new Date().toISOString() })
-                    .eq('id', activeSession.id)
+                  await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'end_session', session_id: activeSession.id }),
+                  })
                   setActiveSession(null)
                   setEndingSession(false)
                 }} disabled={endingSession}

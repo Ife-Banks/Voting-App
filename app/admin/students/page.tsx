@@ -31,10 +31,14 @@ export default function StudentsPage() {
     if (!email || !matric_number) return
 
     setAdding(true)
-    const supabase = createClient()
-    const { data, error } = await supabase.from('students').insert({ email, matric_number }).select().single()
+    const res = await fetch('/api/admin/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add_student', email, matric_number }),
+    })
+    const { data, error } = await res.json()
     if (error) {
-      alert(`Error: ${error.message}`)
+      alert(`Error: ${error}`)
     } else if (data) {
       setStudents(prev => [...prev, data].sort((a, b) => (a.matric_number ?? a.email).localeCompare(b.matric_number ?? b.email)))
       setNewEmail('')
@@ -46,17 +50,26 @@ export default function StudentsPage() {
   async function deleteStudent(id: string, hasVoted: boolean) {
     if (hasVoted && !confirm('This student has already voted. Remove them anyway?')) return
     if (!hasVoted && !confirm('Remove this student?')) return
-    const supabase = createClient()
-    await supabase.from('students').delete().eq('id', id)
-    setStudents(prev => prev.filter(s => s.id !== id))
+    const res = await fetch('/api/admin/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_student', id }),
+    })
+    if (res.ok) {
+      setStudents(prev => prev.filter(s => s.id !== id))
+    }
   }
 
   async function resetVote(id: string, email: string) {
     if (!confirm(`Reset vote for ${email}? They will be able to vote again.`)) return
-    const supabase = createClient()
-    await supabase.from('students').update({ has_voted: false }).eq('id', id)
-    await supabase.from('votes').delete().eq('student_email', email)
-    setStudents(prev => prev.map(s => (s.id === id ? { ...s, has_voted: false } : s)))
+    const res = await fetch('/api/admin/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reset_vote', id, student_email: email }),
+    })
+    if (res.ok) {
+      setStudents(prev => prev.map(s => (s.id === id ? { ...s, has_voted: false } : s)))
+    }
   }
 
   async function addBulk() {
@@ -78,15 +91,19 @@ export default function StudentsPage() {
     }
 
     setBulkLoading(true)
-    const supabase = createClient()
-    const { data, error } = await supabase.from('students').upsert(rows, { onConflict: 'email' }).select()
+    const res = await fetch('/api/admin/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk_import', rows }),
+    })
+    const { error } = await res.json()
     if (error) {
-      alert(`Error: ${error.message}`)
-    } else if (data) {
+      alert(`Error: ${error}`)
+    } else {
       await load()
       setBulkText('')
       setShowBulk(false)
-      alert(`Added/updated ${data.length} student(s)`)
+      alert(`Added/updated ${rows.length} student(s)`)
     }
     setBulkLoading(false)
   }

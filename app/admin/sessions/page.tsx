@@ -24,47 +24,36 @@ export default function SessionsPage() {
   async function createSession() {
     if (!newTitle.trim()) return
     setCreating(true)
-    const supabase = createClient()
 
-    await supabase.from('voting_sessions').update({ is_active: false }).eq('is_active', true)
-
-    const { data, error } = await supabase
-      .from('voting_sessions')
-      .insert({ title: newTitle.trim(), is_active: true })
-      .select()
-      .single()
-
-    if (!error && data) {
-      await supabase.from('settings').update({ election_name: data.title }).eq('id', 1)
-      const { data: updated } = await supabase.from('voting_sessions').select('*').order('created_at', { ascending: false })
-      if (updated) setSessions(updated)
-      setNewTitle('')
-    }
-
+    const res = await fetch('/api/admin/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create_session', title: newTitle }),
+    })
+    const { sessions } = await res.json()
+    if (sessions) setSessions(sessions)
+    setNewTitle('')
     setCreating(false)
   }
 
   async function endSession(session: VotingSession) {
     setActionLoading(session.id)
-    const supabase = createClient()
-    await supabase
-      .from('voting_sessions')
-      .update({ is_active: false, ended_at: new Date().toISOString() })
-      .eq('id', session.id)
-    await supabase.from('settings').update({ election_name: 'Voting Closed' }).eq('id', 1)
+    await fetch('/api/admin/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'end_session', id: session.id }),
+    })
     await load()
     setActionLoading(null)
   }
 
   async function activateSession(session: VotingSession) {
     setActionLoading(session.id)
-    const supabase = createClient()
-    await supabase.from('voting_sessions').update({ is_active: false }).neq('id', session.id)
-    await supabase
-      .from('voting_sessions')
-      .update({ is_active: true, ended_at: null })
-      .eq('id', session.id)
-    await supabase.from('settings').update({ election_name: session.title }).eq('id', 1)
+    await fetch('/api/admin/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'activate_session', id: session.id, title: session.title }),
+    })
     await load()
     setActionLoading(null)
   }
