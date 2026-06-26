@@ -19,6 +19,9 @@ export default function PositionsPage() {
   const [newPositionDesc, setNewPositionDesc] = useState('')
   const [addingPosition, setAddingPosition] = useState(false)
   const [showNewPosition, setShowNewPosition] = useState(false)
+  const [showBulk, setShowBulk] = useState(false)
+  const [bulkText, setBulkText] = useState('')
+  const [bulkLoading, setBulkLoading] = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -61,6 +64,50 @@ export default function PositionsPage() {
     setPositions(prev => prev.filter(p => p.id !== id))
   }
 
+  function parseBulkText(text: string) {
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+    if (!lines.length) return []
+    const startIndex = lines[0].toLowerCase().startsWith('position') ? 1 : 0
+    return lines.slice(startIndex).map(line => {
+      const parts = line.split(',').map(p => p.trim())
+      return {
+        position: parts[0] ?? '',
+        full_name: parts[1] ?? '',
+        class: parts[2] ?? '',
+        manifesto: parts.slice(3).join(', '),
+      }
+    }).filter(r => r.position && r.full_name)
+  }
+
+  async function handleBulkImport() {
+    const rows = parseBulkText(bulkText)
+    if (!rows.length) {
+      alert('No valid rows found. Use format: Position,Full Name,Class,Manifesto')
+      return
+    }
+    setBulkLoading(true)
+    const res = await fetch('/api/admin/positions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bulk_import', rows }),
+    })
+    const { data, error } = await res.json()
+    if (error) {
+      alert(`Error: ${error}`)
+    } else if (data) {
+      await load()
+      setBulkText('')
+      setShowBulk(false)
+      const counts = data.reduce((acc: Record<string, number>, p: any) => {
+        acc.positions = (acc.positions || 0) + 1
+        acc.candidates = (acc.candidates || 0) + (p.candidates?.length || 0)
+        return acc
+      }, {})
+      alert(`Imported ${data.length} position(s) with candidates`)
+    }
+    setBulkLoading(false)
+  }
+
   function updatePositionLocal(id: string, updates: Partial<Position>) {
     setPositions(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p))
   }
@@ -84,6 +131,10 @@ export default function PositionsPage() {
             Manage election positions and add candidates
           </p>
         </div>
+        <button onClick={() => setShowBulk(true)}
+          className="btn-ghost px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
+          <Upload size={16} /> Bulk Import
+        </button>
         <button onClick={() => setShowNewPosition(true)}
           className="btn-gold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2">
           <Plus size={16} /> Add Position
@@ -111,6 +162,45 @@ export default function PositionsPage() {
               </button>
               <button onClick={() => setShowNewPosition(false)}
                 className="btn-ghost px-6 py-2.5 rounded-xl text-sm">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBulk && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: 'rgba(10,10,15,0.85)', backdropFilter: 'blur(8px)' }}>
+          <div className="glass-card rounded-2xl p-5 sm:p-6 w-full max-w-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display text-xl font-semibold" style={{ color: '#F5F0E8' }}>Bulk Import</h3>
+              <button onClick={() => setShowBulk(false)}>
+                <X size={18} style={{ color: 'rgba(245,240,232,0.4)' }} />
+              </button>
+            </div>
+            <p className="text-xs mb-3" style={{ color: 'rgba(245,240,232,0.45)' }}>
+              Paste CSV with format: <strong>Position,Full Name,Class,Manifesto</strong>. The header row is optional.
+            </p>
+            <textarea
+              value={bulkText}
+              onChange={e => setBulkText(e.target.value)}
+              className="input-field w-full px-4 py-3 rounded-xl text-sm resize-none mb-4"
+              rows={12}
+              placeholder={"President,John Doe,SS3A,My campaign promises\nVice President,Jane Smith,SS2B,Her vision"}
+            />
+            {bulkText.trim() && (
+              <p className="text-xs mb-3" style={{ color: 'rgba(76,175,80,0.7)' }}>
+                {parseBulkText(bulkText).length} candidate row(s) detected
+              </p>
+            )}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button onClick={handleBulkImport} disabled={bulkLoading || !bulkText.trim()}
+                className="btn-gold flex-1 py-3 rounded-xl text-sm flex items-center justify-center gap-2">
+                {bulkLoading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                Import
+              </button>
+              <button onClick={() => setShowBulk(false)} className="btn-ghost px-5 py-3 rounded-xl text-sm">
+                Cancel
+              </button>
             </div>
           </div>
         </div>

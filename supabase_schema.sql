@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS candidates (
   manifesto TEXT,
   photo_url TEXT,
   vote_count INT DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (position_id, full_name)
 );
 
 CREATE TABLE IF NOT EXISTS votes (

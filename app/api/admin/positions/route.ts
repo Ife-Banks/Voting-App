@@ -154,6 +154,90 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
+    if (action === 'bulk_import') {
+      type BulkRow = { position: string; full_name: string; class?: string; manifesto?: string }
+      const { rows } = body as { rows: BulkRow[] }
+
+      const grouped: Record<string, BulkRow[]> = {}
+      for (const row of rows) {
+        const title = row.position.trim()
+        if (!title || !row.full_name?.trim()) continue
+        if (!grouped[title]) grouped[title] = []
+        grouped[title].push(row)
+      }
+
+      const positionTitles = Object.keys(grouped)
+      if (!positionTitles.length) {
+        return NextResponse.json({ error: 'No valid rows found' }, { status: 400 })
+      }
+
+      const { data: existingPositions, error: posSelectError } = await supabase
+        .from('positions').select('id, title').in('title', positionTitles)
+      if (posSelectError) {
+        console.error('[admin/positions] bulk_import pos select error:', JSON.stringify(posSelectError))
+        return NextResponse.json({ error: posSelectError.message }, { status: 500 })
+      }
+
+      const existingMap: Record<string, string> = {}
+      for (const p of existingPositions ?? []) existingMap[p.title] = p.id
+
+      const toUpsertPositions = positionTitles
+        .filter(t => !existingMap[t])
+        .map(title => ({ title, description: null, display_order: 0 }))
+
+      const { data: newPositions, error: posInsertError } = toUpsertPositions.length
+        ? await supabase.from('positions').insert(toUpsertPositions).select()
+        : { data: [], error: null }
+      if (posInsertError) {
+        console.error('[admin/positions] bulk_import pos insert error:', JSON.stringify(posInsertError))
+        return NextResponse.json({ error: posInsertError.message }, { status: 500 })
+      }
+
+      for (const p of newPositions ?? []) existingMap[p.title] = p.id
+
+      const posIds = Object.values(existingMap)
+      const { data: existingCandidates } = posIds.length
+        ? await supabase.from('candidates').select('id, position_id, full_name').in('position_id', posIds)
+        : { data: [] }
+
+      const existingCandidateMap: Record<string, string> = {}
+      for (const c of existingCandidates ?? []) {
+        existingCandidateMap[`${c.position_id}::${c.full_name}`] = c.id
+      }
+
+      const toUpsertCandidates: { id: string; position_id: string; full_name: string; class: string | null; manifesto: string | null }[] = []
+      for (const [title, candidateRows] of Object.entries(grouped)) {
+        const posId = existingMap[title]
+        if (!posId) continue
+        for (const row of candidateRows) {
+          toUpsertCandidates.push({
+            id: existingCandidateMap[`${posId}::${row.full_name.trim()}`] ?? '',
+            position_id: posId,
+            full_name: row.full_name.trim(),
+            class: row.class?.trim() || null,
+            manifesto: row.manifesto?.trim() || null,
+          })
+        }
+      }
+
+      if (toUpsertCandidates.length) {
+        const { error: candUpsertError } = await supabase
+          .from('candidates')
+          .upsert(toUpsertCandidates, { onConflict: 'position_id,full_name' })
+        if (candUpsertError) {
+          console.error('[admin/positions] bulk_import candidates upsert error:', JSON.stringify(candUpsertError))
+          return NextResponse.json({ error: candUpsertError.message }, { status: 500 })
+        }
+      }
+
+      const { data: finalPositions } = await supabase
+        .from('positions').select('*, candidates(*)')
+        .in('title', positionTitles)
+        .order('display_order')
+
+      return NextResponse.json({ data: finalPositions, count: { positions: positionTitles.length, candidates: toUpsertCandidates.length } })
+    }
+
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
