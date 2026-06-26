@@ -74,19 +74,24 @@ export default function StudentsPage() {
 
   async function addBulk() {
     const lines = bulkText.split('\n').map(l => l.trim()).filter(Boolean)
-    const rows: { email: string; matric_number: string }[] = []
+    const rows: { email: string; matric_number: string | null }[] = []
 
     for (const line of lines) {
-      const parts = line.split(',').map(p => p.trim())
-      if (parts.length >= 2) {
-        rows.push({ email: parts[0].toLowerCase(), matric_number: parts[1].toUpperCase() })
-      } else if (parts[0].includes('@')) {
-        rows.push({ email: parts[0].toLowerCase(), matric_number: '' })
+      const trimmed = line.trim()
+      if (!trimmed.includes(',')) {
+        rows.push({ email: trimmed.toLowerCase(), matric_number: null })
+      } else {
+        const [email, ...rest] = trimmed.split(',')
+        const matricRaw = rest.join(',').trim()
+        rows.push({
+          email: email.toLowerCase().trim(),
+          matric_number: matricRaw ? matricRaw.toUpperCase() : null,
+        })
       }
     }
 
     if (!rows.length) {
-      alert('No valid entries found. Use format: email,matric_number')
+      alert('No valid entries found. Use format: email,matric_number (matric optional)')
       return
     }
 
@@ -184,14 +189,14 @@ export default function StudentsPage() {
               </button>
             </div>
             <p className="text-xs mb-3" style={{ color: 'rgba(245,240,232,0.45)' }}>
-              Paste one student per line in the format: <strong>email,matric_number</strong>
+              Paste one student per line. Matric number is optional — leave it out or leave it blank after the comma for email-only students.
             </p>
             <textarea
               value={bulkText}
               onChange={e => setBulkText(e.target.value)}
               className="input-field w-full px-4 py-3 rounded-xl text-sm resize-none mb-4"
               rows={10}
-              placeholder="student1@school.edu.ng,ENG/2020/001&#10;student2@school.edu.ng,MAT/2020/002"
+              placeholder="student1@school.edu.ng,MAT/2020/001&#10;student2@school.edu.ng,&#10;student3@school.edu.ng"
             />
             <div className="flex flex-col sm:flex-row gap-3">
               <button onClick={addBulk} disabled={bulkLoading}

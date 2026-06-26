@@ -81,8 +81,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'bulk_import') {
-      const { rows } = body as { rows: { email: string; matric_number: string }[] }
-      const { data, error } = await supabase.from('students').upsert(rows, { onConflict: 'email' }).select()
+      const { rows } = body as { rows: { email: string; matric_number: string | null }[] }
+      const cleaned = rows.map(r => ({
+        email: r.email.toLowerCase().trim(),
+        matric_number: r.matric_number,
+      }))
+      const { data, error } = await supabase.from('students').upsert(cleaned, { onConflict: 'email' }).select()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ data })
     }
