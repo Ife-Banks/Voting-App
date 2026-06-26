@@ -25,36 +25,43 @@ async function getCallerAdmin(req: NextRequest) {
     if (!user?.email) return null
 
     const adminClient = createAdminClient()
-    const { data: profile } = await adminClient
+    const { data: profile, error: profileError } = await adminClient
       .from('admin_profiles')
       .select('id, role')
       .eq('email', user.email)
       .maybeSingle()
+
+    if (profileError) {
+      console.error('[admin/positions] Profile lookup error:', profileError.message)
+    }
     return profile
-  } catch {
+  } catch (err) {
+    console.error('[admin/positions] getCallerAdmin error:', err instanceof Error ? err.message : 'unknown')
     return null
   }
 }
 
 export async function POST(req: NextRequest) {
   console.log('[admin/positions] Request received')
-  const admin = await getCallerAdmin(req)
+  console.log('[admin/positions] env check:', {
+    hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    hasServiceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+  })
+
+  let admin
+  try {
+    admin = await getCallerAdmin(req)
+  } catch (err) {
+    console.error('[admin/positions] getCallerAdmin threw:', err instanceof Error ? err.message : err)
+    return NextResponse.json({ error: 'Auth check failed' }, { status: 500 })
+  }
+
   console.log('[admin/positions] admin:', admin)
 
   if (!admin) {
     console.log('[admin/positions] Not authenticated as admin')
     return NextResponse.json({ error: 'Not authenticated as admin' }, { status: 401 })
   }
-
-  let body: Record<string, unknown>
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
-  }
-
-  const { action } = body
-  console.log('[admin/positions] action:', action)
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.error('[admin/positions] SUPABASE_SERVICE_ROLE_KEY not set')
