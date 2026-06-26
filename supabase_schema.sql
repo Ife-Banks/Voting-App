@@ -221,3 +221,29 @@ BEGIN
   WHERE id = candidate_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+------------------------------------------------------
+-- BULK UPSERT CANDIDATES (avoids UUID null issue)
+------------------------------------------------------
+CREATE OR REPLACE FUNCTION bulk_upsert_candidates(
+  p_candidates JSONB
+)
+RETURNS void AS $$
+DECLARE
+  item JSONB;
+BEGIN
+  FOR item IN SELECT * FROM jsonb_array_elements(p_candidates)
+  LOOP
+    INSERT INTO candidates (position_id, full_name, class, manifesto)
+    VALUES (
+      (item->>'position_id')::uuid,
+      item->>'full_name',
+      NULLIF(item->>'class', '')::text,
+      NULLIF(item->>'manifesto', '')::text
+    )
+    ON CONFLICT (position_id, full_name) DO UPDATE SET
+      class = NULLIF(item->>'class', '')::text,
+      manifesto = NULLIF(item->>'manifesto', '')::text;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
 
       const toUpsertPositions = positionTitles
         .filter(t => !existingMap[t])
-        .map(title => ({ title, description: null, display_order: 0 }))
+        .map(title => ({ title, description: null as string | null, display_order: 0 }))
 
       const { data: newPositions, error: posInsertError } = toUpsertPositions.length
         ? await supabase.from('positions').insert(toUpsertPositions).select()
@@ -195,24 +195,12 @@ export async function POST(req: NextRequest) {
 
       for (const p of newPositions ?? []) existingMap[p.title] = p.id
 
-      const posIds = Object.values(existingMap)
-      const { data: existingCandidates } = posIds.length
-        ? await supabase.from('candidates').select('id, position_id, full_name').in('position_id', posIds)
-        : { data: [] }
-
-      const existingCandidateMap: Record<string, string> = {}
-      for (const c of existingCandidates ?? []) {
-        existingCandidateMap[`${c.position_id}::${c.full_name}`] = c.id
-      }
-
-      const toUpsertCandidates: { id?: string; position_id: string; full_name: string; class: string | null; manifesto: string | null }[] = []
+      const toUpsertCandidates: { position_id: string; full_name: string; class: string | null; manifesto: string | null }[] = []
       for (const [title, candidateRows] of Object.entries(grouped)) {
         const posId = existingMap[title]
         if (!posId) continue
         for (const row of candidateRows) {
-          const existingId = existingCandidateMap[`${posId}::${row.full_name.trim()}`]
           toUpsertCandidates.push({
-            id: existingId,
             position_id: posId,
             full_name: row.full_name.trim(),
             class: row.class?.trim() || null,
@@ -222,9 +210,15 @@ export async function POST(req: NextRequest) {
       }
 
       if (toUpsertCandidates.length) {
-        const { error: candUpsertError } = await supabase
-          .from('candidates')
-          .upsert(toUpsertCandidates, { onConflict: 'position_id,full_name' })
+        const candidatesJson = toUpsertCandidates.map(c => ({
+          position_id: c.position_id,
+          full_name: c.full_name,
+          class: c.class ?? '',
+          manifesto: c.manifesto ?? '',
+        }))
+        const { error: candUpsertError } = await supabase.rpc('bulk_upsert_candidates', {
+          p_candidates: candidatesJson,
+        })
         if (candUpsertError) {
           console.error('[admin/positions] bulk_import candidates upsert error:', JSON.stringify(candUpsertError))
           return NextResponse.json({ error: candUpsertError.message }, { status: 500 })
@@ -238,8 +232,6 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({ data: finalPositions, count: { positions: positionTitles.length, candidates: toUpsertCandidates.length } })
     }
-
-    return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[admin/positions] Error:', msg)
