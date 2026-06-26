@@ -205,13 +205,14 @@ export async function POST(req: NextRequest) {
         existingCandidateMap[`${c.position_id}::${c.full_name}`] = c.id
       }
 
-      const toUpsertCandidates: { id: string; position_id: string; full_name: string; class: string | null; manifesto: string | null }[] = []
+      const toUpsertCandidates: { id?: string; position_id: string; full_name: string; class: string | null; manifesto: string | null }[] = []
       for (const [title, candidateRows] of Object.entries(grouped)) {
         const posId = existingMap[title]
         if (!posId) continue
         for (const row of candidateRows) {
+          const existingId = existingCandidateMap[`${posId}::${row.full_name.trim()}`]
           toUpsertCandidates.push({
-            id: existingCandidateMap[`${posId}::${row.full_name.trim()}`] ?? '',
+            id: existingId,
             position_id: posId,
             full_name: row.full_name.trim(),
             class: row.class?.trim() || null,
