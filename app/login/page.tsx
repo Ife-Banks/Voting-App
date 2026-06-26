@@ -43,39 +43,20 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const res = await fetch('/api/auth/request-otp', {
+      const res = await fetch('/api/auth/login-direct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matric_number: loginInput }),
+        body: JSON.stringify({ identifier: loginInput }),
       })
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error ?? 'Failed to send OTP')
+        setError(data.error ?? 'Login failed')
         setLoading(false)
         return
       }
 
-      if (data.voting_closed) {
-        const directRes = await fetch('/api/auth/login-direct', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identifier: loginInput }),
-        })
-        const directData = await directRes.json()
-
-        if (!directRes.ok) {
-          setError(directData.error ?? 'Login failed')
-          setLoading(false)
-          return
-        }
-
-        window.location.replace('/vote')
-        return
-      }
-
-      const redirectParam = encodeURIComponent(loginInput.trim().toUpperCase())
-      router.push(`/verify-otp?matric=${redirectParam}`)
+      window.location.replace('/vote')
     } catch {
       setError('Connection error. Try again.')
       setLoading(false)
@@ -112,8 +93,8 @@ export default function LoginPage() {
 
             <div className="grid gap-4 sm:grid-cols-3">
               {[
-                'Request OTP with your matric number or email',
-                'Verify your identity securely',
+                'Enter your matric number or email',
+                'Sign in to access your ballot',
                 'Cast your vote in one session',
               ].map((item, index) => (
                 <div key={item} className="glass-card rounded-2xl p-4">
@@ -131,7 +112,7 @@ export default function LoginPage() {
               Sign in to vote
             </h2>
             <p className="text-xs mb-6" style={{ color: 'rgba(245,240,232,0.45)' }}>
-              Enter your matric number or email to receive an OTP
+              Enter your matric number or email to sign in
             </p>
 
             {error && (
@@ -163,9 +144,9 @@ export default function LoginPage() {
                 className="btn-gold w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 mt-2"
               >
                 {loading ? (
-                  <><Loader2 size={18} className="animate-spin" /> Sending OTP...</>
+                  <><Loader2 size={18} className="animate-spin" /> Signing in...</>
                 ) : (
-                  <><Hash size={18} /> Send OTP</>
+                  <><Hash size={18} /> Sign In</>
                 )}
               </button>
             </form>
