@@ -17,29 +17,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
     }
 
-    let matric_number: string
+    let identifier: string
     let otp_code: string
     try {
       const body = await req.json()
-      matric_number = body.matric_number
+      identifier = body.identifier ?? body.matric_number
       otp_code = body.otp_code
     } catch {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
-    if (!matric_number || !otp_code) {
-      return NextResponse.json({ error: 'Matric number and OTP are required' }, { status: 400 })
+    if (!identifier || !otp_code) {
+      return NextResponse.json({ error: 'Email/matric number and OTP are required' }, { status: 400 })
     }
 
-    matric_number = matric_number.trim().toUpperCase()
-    otp_code = otp_code.trim()
+    identifier = identifier.trim()
+    const isEmail = identifier.includes('@')
+    const lookupValue = isEmail ? identifier.toLowerCase() : identifier.toUpperCase()
 
     const supabase = createAdminClient()
 
     const { data: student, error: dbError } = await supabase
       .from('students')
       .select('id, email, matric_number, has_voted, otp_code, otp_expires_at, otp_attempts')
-      .eq('matric_number', matric_number)
+      .eq(isEmail ? 'email' : 'matric_number', lookupValue)
       .maybeSingle()
 
     if (dbError) {
@@ -48,12 +49,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (!student) {
-      logAuth('verify-otp', matric_number, 'NOT_FOUND')
-      return NextResponse.json({ error: 'Invalid matric number' }, { status: 401 })
+      logAuth('verify-otp', identifier, 'NOT_FOUND')
+      return NextResponse.json({ error: 'No student found with this email or matric number' }, { status: 401 })
     }
 
     if (student.otp_attempts !== null && student.otp_attempts >= MAX_ATTEMPTS) {
-      logAuth('verify-otp', matric_number, 'MAX_ATTEMPTS_EXCEEDED')
+      logAuth('verify-otp', identifier, 'MAX_ATTEMPTS_EXCEEDED')
       return NextResponse.json({ error: 'Too many attempts. Request a new OTP.' }, { status: 429 })
     }
 
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
     const expiresAt = student.otp_expires_at ? new Date(student.otp_expires_at) : null
 
     if (!expiresAt || now > expiresAt) {
-      logAuth('verify-otp', matric_number, 'OTP_EXPIRED')
+      logAuth('verify-otp', identifier, 'OTP_EXPIRED')
       return NextResponse.json({ error: 'OTP has expired. Request a new one.' }, { status: 401 })
     }
 
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
         .update({ otp_attempts: newAttempts })
         .eq('id', student.id)
 
-      logAuth('verify-otp', matric_number, `WRONG_OTP (attempt ${newAttempts})`)
+      logAuth('verify-otp', identifier, `WRONG_OTP (attempt ${newAttempts})`)
       return NextResponse.json({ error: 'Invalid OTP code' }, { status: 401 })
     }
 
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
 
     if (settings?.voting_open && student.has_voted) {
-      logAuth('verify-otp', matric_number, 'ALREADY_VOTED')
+      logAuth('verify-otp', identifier, 'ALREADY_VOTED')
       return NextResponse.json({ error: 'You have already voted' }, { status: 401 })
     }
 
@@ -96,13 +97,13 @@ export async function POST(req: NextRequest) {
     const cookie = await createSessionCookie({
       email: student.email,
       id: student.id,
-      matric_number: student.matric_number,
+      matric_number: student.matric_number ?? null,
       exp,
     })
 
     const response = NextResponse.json({ success: true })
     response.headers.append('Set-Cookie', cookie)
-    logAuth('verify-otp', matric_number, 'SUCCESS')
+    logAuth('verify-otp', identifier, 'SUCCESS')
     return response
   } catch (err) {
     logError('verify-otp', 'unknown', err instanceof Error ? err.message : 'unknown')

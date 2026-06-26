@@ -82,7 +82,7 @@ export default function VerifyOtpPage() {
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matric_number, otp_code: otpCode }),
+        body: JSON.stringify({ identifier: matric_number, otp_code: otpCode }),
       })
       const data = await res.json()
 
