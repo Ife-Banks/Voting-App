@@ -226,7 +226,7 @@ export default function VerifyOtpPage() {
               </button>
               <a href="/login" className="text-xs hover:underline"
                 style={{ color: 'rgba(76,175,80,0.6)' }}>
-                Use different matric number
+                Use a different email or matric number
               </a>
             </div>
           </div>

@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       const { email, matric_number } = body as { email: string; matric_number: string }
       const { data, error } = await supabase
         .from('students')
-        .insert({ email: email.toLowerCase().trim(), matric_number: matric_number.trim().toUpperCase() })
+        .insert({ email: email.toLowerCase().trim(), matric_number: matric_number ? matric_number.trim().toUpperCase() : null })
         .select()
         .single()
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })

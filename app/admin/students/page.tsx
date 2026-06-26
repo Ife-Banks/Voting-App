@@ -28,7 +28,7 @@ export default function StudentsPage() {
   async function addStudent() {
     const email = newEmail.trim().toLowerCase()
     const matric_number = newMatricNumber.trim().toUpperCase()
-    if (!email || !matric_number) return
+    if (!email) return
 
     setAdding(true)
     const res = await fetch('/api/admin/students', {
@@ -160,11 +160,11 @@ export default function StudentsPage() {
             onChange={e => setNewMatricNumber(e.target.value.toUpperCase())}
             onKeyDown={e => e.key === 'Enter' && addStudent()}
             className="input-field w-full px-4 py-2.5 rounded-xl text-sm"
-            placeholder="MAT/2020/001"
+            placeholder="MAT/2020/001 (optional)"
           />
           <button
             onClick={addStudent}
-            disabled={adding || !newEmail || !newMatricNumber}
+            disabled={adding || !newEmail}
             className="btn-gold px-5 py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 shrink-0"
           >
             {adding ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}

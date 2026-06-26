@@ -16,26 +16,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
     }
 
-    let matric_number: string
+    let identifier: string
     try {
       const body = await req.json()
-      matric_number = body.matric_number
+      identifier = body.matric_number ?? body.identifier
     } catch {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
-    if (!matric_number || typeof matric_number !== 'string') {
-      return NextResponse.json({ error: 'Matric number is required' }, { status: 400 })
+    if (!identifier || typeof identifier !== 'string') {
+      return NextResponse.json({ error: 'Matric number or email is required' }, { status: 400 })
     }
 
-    matric_number = matric_number.trim().toUpperCase()
+    identifier = identifier.trim()
+    const isEmail = identifier.includes('@')
+    const lookupValue = isEmail ? identifier.toLowerCase() : identifier.toUpperCase()
 
     const supabase = createAdminClient()
 
     const { data: student, error: dbError } = await supabase
       .from('students')
-      .select('id, email, has_voted')
-      .eq('matric_number', matric_number)
+      .select('id, email, has_voted, matric_number')
+      .eq(isEmail ? 'email' : 'matric_number', lookupValue)
       .maybeSingle()
 
     if (dbError) {
@@ -44,8 +46,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (!student) {
-      logAuth('request-otp', matric_number, 'NOT_FOUND')
-      return NextResponse.json({ error: 'No student found with this matric number' }, { status: 404 })
+      logAuth('request-otp', identifier, 'NOT_FOUND')
+      return NextResponse.json({ error: 'No student found with this email or matric number' }, { status: 404 })
     }
 
     const { data: settings } = await supabase
@@ -55,12 +57,12 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
 
     if (!settings?.voting_open) {
-      logAuth('request-otp', matric_number, 'VOTING_CLOSED')
-      return NextResponse.json({ voting_closed: true }, { status: 200 })
+      logAuth('request-otp', identifier, 'VOTING_CLOSED')
+      return NextResponse.json({ voting_closed: true, identifier }, { status: 200 })
     }
 
     if (student.has_voted) {
-      logAuth('request-otp', matric_number, 'ALREADY_VOTED')
+      logAuth('request-otp', identifier, 'ALREADY_VOTED')
       return NextResponse.json({ error: 'You have already voted' }, { status: 401 })
     }
 
@@ -87,7 +89,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to send OTP email' }, { status: 500 })
     }
 
-    logAuth('request-otp', matric_number, 'SUCCESS')
+    logAuth('request-otp', identifier, 'SUCCESS')
     return NextResponse.json({ success: true, message: 'OTP sent to your email' })
   } catch (err) {
     logError('request-otp', 'unknown', err instanceof Error ? err.message : 'unknown')

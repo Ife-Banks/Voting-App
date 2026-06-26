@@ -15,19 +15,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
     }
 
-    let matric_number: string
+    let identifier: string
     try {
       const body = await req.json()
-      matric_number = body.matric_number
+      identifier = body.identifier ?? body.matric_number
     } catch {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
-    if (!matric_number || typeof matric_number !== 'string') {
-      return NextResponse.json({ error: 'Matric number is required' }, { status: 400 })
+    if (!identifier || typeof identifier !== 'string') {
+      return NextResponse.json({ error: 'Matric number or email is required' }, { status: 400 })
     }
 
-    matric_number = matric_number.trim().toUpperCase()
+    identifier = identifier.trim()
+    const isEmail = identifier.includes('@')
+    const lookupValue = isEmail ? identifier.toLowerCase() : identifier.toUpperCase()
 
     const supabase = createAdminClient()
 
@@ -38,14 +40,14 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
 
     if (settings?.voting_open) {
-      logAuth('login-direct', matric_number, 'VOTING_STILL_OPEN')
+      logAuth('login-direct', identifier, 'VOTING_STILL_OPEN')
       return NextResponse.json({ error: 'Voting is still open. Please use OTP to login.' }, { status: 400 })
     }
 
     const { data: student, error: dbError } = await supabase
       .from('students')
       .select('id, email, matric_number')
-      .eq('matric_number', matric_number)
+      .eq(isEmail ? 'email' : 'matric_number', lookupValue)
       .maybeSingle()
 
     if (dbError) {
@@ -54,21 +56,21 @@ export async function POST(req: NextRequest) {
     }
 
     if (!student) {
-      logAuth('login-direct', matric_number, 'NOT_FOUND')
-      return NextResponse.json({ error: 'No student found with this matric number' }, { status: 404 })
+      logAuth('login-direct', identifier, 'NOT_FOUND')
+      return NextResponse.json({ error: 'No student found with this email or matric number' }, { status: 404 })
     }
 
     const exp = getCookieExpiry()
     const cookie = await createSessionCookie({
       email: student.email,
       id: student.id,
-      matric_number: student.matric_number,
+      matric_number: student.matric_number ?? null,
       exp,
     })
 
     const response = NextResponse.json({ success: true })
     response.headers.append('Set-Cookie', cookie)
-    logAuth('login-direct', matric_number, 'SUCCESS')
+    logAuth('login-direct', identifier, 'SUCCESS')
     return response
   } catch (err) {
     logError('login-direct', 'unknown', err instanceof Error ? err.message : 'unknown')

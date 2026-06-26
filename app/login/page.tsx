@@ -7,7 +7,7 @@ import Image from 'next/image'
 import { Shield, Vote, AlertCircle, Loader2, Hash } from 'lucide-react'
 
 export default function LoginPage() {
-  const [matric_number, setMatricNumber] = useState('')
+  const [loginInput, setLoginInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [settings, setSettings] = useState<{ election_name: string; school_name: string } | null>(null)
@@ -37,7 +37,7 @@ export default function LoginPage() {
     return () => controller.abort()
   }, [])
 
-  async function handleMatricSubmit(e: React.FormEvent) {
+  async function handleLoginSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
@@ -46,7 +46,7 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/request-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matric_number }),
+        body: JSON.stringify({ matric_number: loginInput }),
       })
       const data = await res.json()
 
@@ -60,7 +60,7 @@ export default function LoginPage() {
         const directRes = await fetch('/api/auth/login-direct', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ matric_number }),
+          body: JSON.stringify({ identifier: loginInput }),
         })
         const directData = await directRes.json()
 
@@ -74,7 +74,8 @@ export default function LoginPage() {
         return
       }
 
-      router.push(`/verify-otp?matric=${encodeURIComponent(matric_number.trim().toUpperCase())}`)
+      const redirectParam = encodeURIComponent(loginInput.trim().toUpperCase())
+      router.push(`/verify-otp?matric=${redirectParam}`)
     } catch {
       setError('Connection error. Try again.')
       setLoading(false)
@@ -111,7 +112,7 @@ export default function LoginPage() {
 
             <div className="grid gap-4 sm:grid-cols-3">
               {[
-                'Request OTP with your matric number',
+                'Request OTP with your matric number or email',
                 'Verify your identity securely',
                 'Cast your vote in one session',
               ].map((item, index) => (
@@ -130,7 +131,7 @@ export default function LoginPage() {
               Sign in to vote
             </h2>
             <p className="text-xs mb-6" style={{ color: 'rgba(245,240,232,0.45)' }}>
-              Enter your matric number to receive an OTP
+              Enter your matric number or email to receive an OTP
             </p>
 
             {error && (
@@ -141,24 +142,24 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleMatricSubmit} className="space-y-5">
+            <form onSubmit={handleLoginSubmit} className="space-y-5">
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: 'rgba(245,240,232,0.7)' }}>
-                  Matric Number
+                  Matric Number or Email
                 </label>
                 <input
                   type="text"
-                  value={matric_number}
-                  onChange={e => setMatricNumber(e.target.value.toUpperCase())}
+                  value={loginInput}
+                  onChange={e => setLoginInput(e.target.value.toUpperCase())}
                   className="input-field w-full px-4 py-3 rounded-xl text-sm"
-                  placeholder="e.g. 125/22/1/0018"
+                  placeholder="e.g. 125/22/1/0018 or student@email.com"
                   required
                 />
               </div>
 
               <button
                 type="submit"
-                disabled={loading || !matric_number}
+                disabled={loading || !loginInput}
                 className="btn-gold w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 mt-2"
               >
                 {loading ? (
