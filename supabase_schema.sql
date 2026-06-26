@@ -194,6 +194,12 @@ GRANT UPDATE (vote_count) ON candidates TO vote_counter;
 REVOKE UPDATE, DELETE ON votes FROM service_role, authenticated, anon;
 REVOKE UPDATE, DELETE ON candidates FROM service_role, authenticated, anon;
 GRANT INSERT ON votes TO service_role;
+GRANT INSERT, UPDATE, DELETE ON candidates TO service_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO service_role;
+GRANT INSERT, UPDATE, DELETE ON positions TO service_role;
+GRANT INSERT, UPDATE, DELETE ON students TO service_role;
+GRANT INSERT, UPDATE, DELETE ON voting_sessions TO service_role;
+GRANT UPDATE ON settings TO service_role;
 
 ------------------------------------------------------
 -- 7. ADMIN PROFILES (seed)

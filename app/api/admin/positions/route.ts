@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
   const { action } = body
+  console.log('[admin/positions] action:', action)
 
   try {
     if (action === 'add_position') {
@@ -84,7 +85,10 @@ export async function POST(req: NextRequest) {
       const { data, error } = await supabase.from('positions').insert({
         title, description: description ?? null, display_order: display_order ?? 0,
       }).select().single()
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (error) {
+        console.error('[admin/positions] add_position error:', JSON.stringify(error))
+        return NextResponse.json({ error: String(error?.message || error) }, { status: 500 })
+      }
       return NextResponse.json({ data })
     }
 
@@ -93,14 +97,20 @@ export async function POST(req: NextRequest) {
       const { data, error } = await supabase.from('positions').update({
         title, description: description ?? null,
       }).eq('id', id).select().single()
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (error) {
+        console.error('[admin/positions] update_position error:', JSON.stringify(error))
+        return NextResponse.json({ error: String(error?.message || error) }, { status: 500 })
+      }
       return NextResponse.json({ data })
     }
 
     if (action === 'delete_position') {
       const { id } = body as { id: string }
       const { error } = await supabase.from('positions').delete().eq('id', id)
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (error) {
+        console.error('[admin/positions] delete_position error:', JSON.stringify(error))
+        return NextResponse.json({ error: String(error?.message || error) }, { status: 500 })
+      }
       return NextResponse.json({ success: true })
     }
 
@@ -112,7 +122,10 @@ export async function POST(req: NextRequest) {
         position_id, full_name, class: cls ?? null, manifesto: manifesto ?? null,
         photo_url: photo_url ?? null,
       }).select().single()
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (error) {
+        console.error('[admin/positions] add_candidate error:', JSON.stringify(error))
+        return NextResponse.json({ error: String(error?.message || error) }, { status: 500 })
+      }
       return NextResponse.json({ data })
     }
 
@@ -123,20 +136,27 @@ export async function POST(req: NextRequest) {
       const { data, error } = await supabase.from('candidates').update({
         full_name, class: cls ?? null, manifesto: manifesto ?? null, photo_url: photo_url ?? null,
       }).eq('id', id).select().single()
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (error) {
+        console.error('[admin/positions] update_candidate error:', JSON.stringify(error))
+        return NextResponse.json({ error: String(error?.message || error) }, { status: 500 })
+      }
       return NextResponse.json({ data })
     }
 
     if (action === 'delete_candidate') {
       const { id } = body as { id: string }
+      console.log('[admin/positions] delete_candidate with id:', id)
       const { error } = await supabase.from('candidates').delete().eq('id', id)
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (error) {
+        console.error('[admin/positions] delete_candidate error:', JSON.stringify(error))
+        return NextResponse.json({ error: String(error?.message || error) }, { status: 500 })
+      }
       return NextResponse.json({ success: true })
     }
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'unknown'
+    const msg = err instanceof Error ? err.message : String(err)
     console.error('[admin/positions] Error:', msg)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
