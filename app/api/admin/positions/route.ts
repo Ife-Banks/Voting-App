@@ -70,6 +70,14 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient()
 
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+  const { action } = body
+
   try {
     if (action === 'add_position') {
       const { title, description, display_order } = body as { title: string; description?: string; display_order?: number }
