@@ -10,7 +10,8 @@
 // IMPORTANT: this consumes real quota on Resend/Brevo/Mailjet. Run it a few
 // days before voting opens, never on election day itself.
 
-import 'dotenv/config'
+import { config } from 'dotenv'
+config({ path: '.env.local' })
 import { sendEmail } from '../lib/email-service'
 
 async function main() {
