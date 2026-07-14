@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Eye, EyeOff } from 'lucide-react'
 
 function SetupForm() {
   const router = useRouter()
@@ -14,6 +15,8 @@ function SetupForm() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -132,26 +135,38 @@ function SetupForm() {
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="At least 8 characters"
-              className="w-full px-4 py-3 bg-[#1A1A24] border border-[#20203A] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#4CAF50]"
-              required
-              minLength={8}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="At least 8 characters"
+                className="w-full px-4 py-3 pr-11 bg-[#1A1A24] border border-[#20203A] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#4CAF50]"
+                required
+                minLength={8}
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 cursor-pointer">
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">Confirm Password</label>
-            <input
-              type="password"
-              value={confirm}
-              onChange={e => setConfirm(e.target.value)}
-              placeholder="Repeat password"
-              className="w-full px-4 py-3 bg-[#1A1A24] border border-[#20203A] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#4CAF50]"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showConfirm ? 'text' : 'password'}
+                value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                placeholder="Repeat password"
+                className="w-full px-4 py-3 pr-11 bg-[#1A1A24] border border-[#20203A] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#4CAF50]"
+                required
+              />
+              <button type="button" onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 cursor-pointer">
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           {error && (
             <p className="text-red-400 text-sm">{error}</p>
