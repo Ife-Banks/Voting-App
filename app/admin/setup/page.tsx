@@ -73,7 +73,7 @@ function SetupForm() {
 
   if (valid === 'loading') {
     return (
-      <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0A1A0A] flex items-center justify-center p-4">
         <p className="text-gray-400">Verifying invite link...</p>
       </div>
     )
@@ -81,7 +81,7 @@ function SetupForm() {
 
   if (valid === 'invalid') {
     return (
-      <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0A1A0A] flex items-center justify-center p-4">
         <div className="bg-[#13131A] border border-[#20203A] rounded-xl p-8 max-w-md w-full text-center">
           <div className="text-red-400 text-5xl mb-4">!</div>
           <h1 className="text-xl font-bold text-white mb-2">Invalid or Expired Link</h1>
@@ -95,7 +95,7 @@ function SetupForm() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0A1A0A] flex items-center justify-center p-4">
         <div className="bg-[#13131A] border border-[#20203A] rounded-xl p-8 max-w-md w-full text-center">
           <div className="text-green-400 text-5xl mb-4">&#10003;</div>
           <h1 className="text-xl font-bold text-white mb-2">Password Set!</h1>
@@ -104,7 +104,7 @@ function SetupForm() {
           </p>
           <button
             onClick={() => router.push('/admin/login')}
-            className="w-full px-6 py-3 bg-[#C9A84C] text-[#0A0A0F] rounded-xl font-semibold hover:bg-[#B8943F] transition-colors cursor-pointer"
+            className="w-full px-6 py-3 bg-[#4CAF50] text-[#0A1A0A] rounded-xl font-semibold hover:bg-[#43A047] transition-colors cursor-pointer"
           >
             Go to Login
           </button>
@@ -114,7 +114,7 @@ function SetupForm() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0A1A0A] flex items-center justify-center p-4">
       <div className="bg-[#13131A] border border-[#20203A] rounded-xl p-8 max-w-md w-full">
         <h1 className="text-2xl font-bold text-white mb-1">Set Up Password</h1>
         <p className="text-gray-400 text-sm mb-6">
@@ -137,7 +137,7 @@ function SetupForm() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="At least 8 characters"
-              className="w-full px-4 py-3 bg-[#1A1A24] border border-[#20203A] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#C9A84C]"
+              className="w-full px-4 py-3 bg-[#1A1A24] border border-[#20203A] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#4CAF50]"
               required
               minLength={8}
             />
@@ -149,7 +149,7 @@ function SetupForm() {
               value={confirm}
               onChange={e => setConfirm(e.target.value)}
               placeholder="Repeat password"
-              className="w-full px-4 py-3 bg-[#1A1A24] border border-[#20203A] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#C9A84C]"
+              className="w-full px-4 py-3 bg-[#1A1A24] border border-[#20203A] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#4CAF50]"
               required
             />
           </div>
@@ -159,7 +159,7 @@ function SetupForm() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full px-6 py-3 bg-[#C9A84C] text-[#0A0A0F] rounded-xl font-semibold hover:bg-[#B8943F] transition-colors disabled:opacity-50 cursor-pointer"
+            className="w-full px-6 py-3 bg-[#4CAF50] text-[#0A1A0A] rounded-xl font-semibold hover:bg-[#43A047] transition-colors disabled:opacity-50 cursor-pointer"
           >
             {submitting ? 'Setting up...' : 'Set Password & Login'}
           </button>
@@ -172,7 +172,7 @@ function SetupForm() {
 export default function AdminSetupPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0A1A0A] flex items-center justify-center p-4">
         <p className="text-gray-400">Loading...</p>
       </div>
     }>

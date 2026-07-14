@@ -61,7 +61,7 @@ export default function SessionsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full p-8">
-        <Loader2 className="animate-spin" style={{ color: '#C9A84C' }} />
+        <Loader2 className="animate-spin" style={{ color: '#4CAF50' }} />
       </div>
     )
   }
@@ -71,12 +71,12 @@ export default function SessionsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold gold-text mb-1">Voting Sessions</h1>
-          <p className="text-sm" style={{ color: 'rgba(245,240,232,0.45)' }}>Manage voting periods</p>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>Manage voting periods</p>
         </div>
       </div>
 
       <div className="glass-card rounded-2xl p-5 sm:p-6">
-        <h2 className="text-lg font-display font-semibold mb-4" style={{ color: '#F5F0E8' }}>
+        <h2 className="text-lg font-display font-semibold mb-4" style={{ color: '#FFFFFF' }}>
           New Session
         </h2>
         <div className="flex flex-col lg:flex-row gap-3">
@@ -100,18 +100,18 @@ export default function SessionsPage() {
       <div className="glass-card rounded-2xl overflow-hidden">
         {sessions.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-sm" style={{ color: 'rgba(245,240,232,0.25)' }}>No sessions yet</p>
+            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>No sessions yet</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[820px]">
               <thead>
-                <tr className="border-b" style={{ borderColor: 'rgba(201,168,76,0.1)' }}>
-                  <th className="text-left px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Title</th>
-                  <th className="text-center px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Status</th>
-                  <th className="text-center px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Created</th>
-                  <th className="text-center px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Ended</th>
-                  <th className="text-right px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Actions</th>
+                <tr className="border-b" style={{ borderColor: 'rgba(212,168,67,0.1)' }}>
+                  <th className="text-left px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>Title</th>
+                  <th className="text-center px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>Status</th>
+                  <th className="text-center px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>Created</th>
+                  <th className="text-center px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>Ended</th>
+                  <th className="text-right px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -119,10 +119,10 @@ export default function SessionsPage() {
                   <tr
                     key={s.id}
                     className={`border-b transition-colors hover:bg-white/[0.02] ${i === sessions.length - 1 ? 'border-transparent' : ''}`}
-                    style={{ borderColor: 'rgba(201,168,76,0.06)' }}
+                    style={{ borderColor: 'rgba(212,168,67,0.06)' }}
                   >
                     <td className="px-6 py-4">
-                      <p className="text-sm font-medium" style={{ color: '#F5F0E8' }}>{s.title}</p>
+                      <p className="text-sm font-medium" style={{ color: '#FFFFFF' }}>{s.title}</p>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${s.is_active ? 'badge-open' : 'badge-closed'}`}>
@@ -130,18 +130,18 @@ export default function SessionsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="text-xs" style={{ color: 'rgba(245,240,232,0.5)' }}>
+                      <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
                         {new Date(s.created_at).toLocaleDateString()}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="text-xs" style={{ color: 'rgba(245,240,232,0.5)' }}>
+                      <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
                         {s.ended_at ? new Date(s.ended_at).toLocaleDateString() : '—'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       {actionLoading === s.id ? (
-                        <Loader2 size={14} className="animate-spin inline" style={{ color: '#C9A84C' }} />
+                        <Loader2 size={14} className="animate-spin inline" style={{ color: '#4CAF50' }} />
                       ) : s.is_active ? (
                         <button
                           onClick={() => endSession(s)}
@@ -154,7 +154,7 @@ export default function SessionsPage() {
                         <button
                           onClick={() => activateSession(s)}
                           className="text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 ml-auto"
-                          style={{ background: 'rgba(61,138,108,0.15)', color: '#3D8A6C' }}
+                          style={{ background: 'rgba(58,58,80,0.15)', color: '#3A3A50' }}
                         >
                           <Play size={12} /> Activate
                         </button>

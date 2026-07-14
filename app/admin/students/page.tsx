@@ -68,7 +68,7 @@ export default function StudentsPage() {
       body: JSON.stringify({ action: 'reset_vote', id, student_email: email }),
     })
     if (res.ok) {
-      setStudents(prev => prev.map(s => (s.id === id ? { ...s, has_voted: false } : s)))
+      setStudents(prev => prev.map(s => (s.id === id ? { ...s, has_voted: false, voted_from_ip: null } : s)))
     }
   }
 
@@ -114,7 +114,7 @@ export default function StudentsPage() {
   }
 
   function exportCSV() {
-    const csv = ['Email,Matric Number,Has Voted', ...students.map(s => `${s.email},${s.matric_number ?? ''},${s.has_voted}`)].join('\n')
+    const csv = ['Email,Matric Number,Has Voted,Voted From IP', ...students.map(s => `${s.email},${s.matric_number ?? ''},${s.has_voted},${s.voted_from_ip ?? ''}`)].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -134,7 +134,7 @@ export default function StudentsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-display font-bold gold-text mb-1">Students</h1>
-          <p className="text-sm" style={{ color: 'rgba(245,240,232,0.45)' }}>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
             {students.length} registered · {votedCount} voted · {students.length - votedCount} pending
           </p>
         </div>
@@ -150,7 +150,7 @@ export default function StudentsPage() {
       </div>
 
       <div className="glass-card rounded-2xl p-5 sm:p-6">
-        <h3 className="text-sm font-semibold mb-3" style={{ color: 'rgba(245,240,232,0.7)' }}>Add Student</h3>
+        <h3 className="text-sm font-semibold mb-3" style={{ color: 'rgba(255,255,255,0.7)' }}>Add Student</h3>
         <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_0.7fr_auto] gap-3">
           <input
             value={newEmail}
@@ -183,12 +183,12 @@ export default function StudentsPage() {
           style={{ background: 'rgba(10,10,15,0.85)', backdropFilter: 'blur(8px)' }}>
           <div className="glass-card rounded-2xl p-5 sm:p-6 w-full max-w-lg">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display text-xl font-semibold" style={{ color: '#F5F0E8' }}>Bulk Import</h3>
+              <h3 className="font-display text-xl font-semibold" style={{ color: '#FFFFFF' }}>Bulk Import</h3>
               <button onClick={() => setShowBulk(false)}>
-                <X size={18} style={{ color: 'rgba(245,240,232,0.4)' }} />
+                <X size={18} style={{ color: 'rgba(255,255,255,0.4)' }} />
               </button>
             </div>
-            <p className="text-xs mb-3" style={{ color: 'rgba(245,240,232,0.45)' }}>
+            <p className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>
               Paste one student per line. Matric number is optional — leave it out or leave it blank after the comma for email-only students.
             </p>
             <textarea
@@ -213,7 +213,7 @@ export default function StudentsPage() {
       )}
 
       <div className="relative">
-        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'rgba(245,240,232,0.3)' }} />
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'rgba(255,255,255,0.3)' }} />
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -224,24 +224,25 @@ export default function StudentsPage() {
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="animate-spin" style={{ color: '#C9A84C' }} />
+          <Loader2 className="animate-spin" style={{ color: '#4CAF50' }} />
         </div>
       ) : (
         <div className="glass-card rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px]">
+            <table className="w-full min-w-[860px]">
               <thead>
-                <tr className="border-b" style={{ borderColor: 'rgba(201,168,76,0.1)' }}>
-                  <th className="text-left px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Matric Number</th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Email</th>
-                  <th className="text-center px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Status</th>
-                  <th className="text-right px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(245,240,232,0.4)' }}>Actions</th>
+                <tr className="border-b" style={{ borderColor: 'rgba(212,168,67,0.1)' }}>
+                  <th className="text-left px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>Matric Number</th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>Email</th>
+                  <th className="text-center px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>Status</th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>Voted From IP</th>
+                  <th className="text-right px-6 py-3 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="text-center py-12 text-sm" style={{ color: 'rgba(245,240,232,0.25)' }}>
+                    <td colSpan={5} className="text-center py-12 text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
                       {search ? 'No students match your search' : 'No students added yet'}
                     </td>
                   </tr>
@@ -251,13 +252,13 @@ export default function StudentsPage() {
                   <tr
                     key={student.id}
                     className={`border-b transition-colors hover:bg-white/[0.02] ${i === filtered.length - 1 ? 'border-transparent' : ''}`}
-                    style={{ borderColor: 'rgba(201,168,76,0.06)' }}
+                    style={{ borderColor: 'rgba(212,168,67,0.06)' }}
                   >
                     <td className="px-6 py-3.5">
-                      <p className="text-sm font-mono" style={{ color: '#C9A84C' }}>{student.matric_number ?? '—'}</p>
+                      <p className="text-sm font-mono" style={{ color: '#4CAF50' }}>{student.matric_number ?? '—'}</p>
                     </td>
                     <td className="px-6 py-3.5">
-                      <p className="text-sm" style={{ color: '#F5F0E8' }}>{student.email}</p>
+                      <p className="text-sm" style={{ color: '#FFFFFF' }}>{student.email}</p>
                     </td>
                     <td className="px-6 py-3.5 text-center">
                       <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${student.has_voted ? 'badge-open' : 'badge-closed'}`}>
@@ -266,13 +267,18 @@ export default function StudentsPage() {
                           : <><Circle size={11} /> Pending</>}
                       </span>
                     </td>
+                    <td className="px-6 py-3.5">
+                      <p className="text-xs font-mono" style={{ color: student.voted_from_ip ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)' }}>
+                        {student.voted_from_ip ?? '—'}
+                      </p>
+                    </td>
                     <td className="px-6 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {student.has_voted && (
                           <button
                             onClick={() => resetVote(student.id, student.email)}
                             className="text-xs hover:underline transition-colors"
-                            style={{ color: 'rgba(201,168,76,0.6)' }}
+                            style={{ color: 'rgba(76,175,80,0.6)' }}
                           >
                             Reset vote
                           </button>

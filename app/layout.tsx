@@ -5,17 +5,17 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export const metadata: Metadata = {
-  title: 'ESSA Voting App',
-  description: 'Environmental Science Student Association Elections',
+  title: 'NASSA Voting App',
+  description: 'Natural and Applied Sciences Student Association Elections',
   openGraph: {
-    title: 'ESSA Voting App',
-    description: 'Environmental Science Student Association Elections',
+    title: 'NASSA Voting App',
+    description: 'Natural and Applied Sciences Student Association Elections',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'ESSA Voting App',
+        alt: 'NASSA Voting App',
       },
     ],
   },

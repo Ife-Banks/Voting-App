@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
 
     if (action === 'reset_vote') {
       const { id, student_email } = body as { id: string; student_email: string }
-      const { error } = await supabase.from('students').update({ has_voted: false }).eq('id', id)
+      const { error } = await supabase.from('students').update({ has_voted: false, voted_from_ip: null }).eq('id', id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       await supabase.from('votes').delete().eq('student_email', student_email)
       return NextResponse.json({ success: true })

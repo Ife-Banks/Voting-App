@@ -87,8 +87,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (profileLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0A0A0F' }}>
-        <div className="animate-spin w-8 h-8 border-2 border-[#C9A84C] border-t-transparent rounded-full"></div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0A1A0A' }}>
+        <div className="animate-spin w-8 h-8 border-2 border-[#4CAF50] border-t-transparent rounded-full"></div>
       </div>
     )
   }
@@ -96,14 +96,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const sidebarContent = (
     <>
       <div className="px-4 lg:px-6 py-4 lg:py-6 border-b flex items-center gap-3"
-        style={{ borderColor: 'rgba(201,168,76,0.12)' }}>
+        style={{ borderColor: 'rgba(212,168,67,0.12)' }}>
         <div className="relative w-9 h-9 shrink-0">
           <Image src="/image.png" alt="Logo" fill className="object-contain rounded-xl" />
         </div>
         {!sidebarCollapsed && (
           <div className="overflow-hidden">
             <p className="text-xs font-semibold gold-text leading-tight truncate">{electionName}</p>
-            <p className="text-xs" style={{ color: 'rgba(245,240,232,0.35)' }}>Admin Panel</p>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Admin Panel</p>
           </div>
         )}
       </div>
@@ -114,7 +114,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           return (
             <Link key={href} href={href}
               className={`sidebar-item flex items-center gap-3 px-3 py-2.5 text-sm ${active ? 'active' : ''}`}
-              style={{ color: active ? '#C9A84C' : 'rgba(245,240,232,0.6)' }}>
+              style={{ color: active ? '#4CAF50' : 'rgba(255,255,255,0.6)' }}>
               <Icon size={16} className="shrink-0" />
               {!sidebarCollapsed && <span className="truncate">{label}</span>}
               {active && !sidebarCollapsed && <ChevronRight size={14} className="ml-auto shrink-0" />}
@@ -126,7 +126,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="px-2 lg:px-3 pb-6">
         <button onClick={logout}
           className="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 text-sm"
-          style={{ color: 'rgba(245,240,232,0.4)' }}>
+          style={{ color: 'rgba(255,255,255,0.4)' }}>
           <LogOut size={16} className="shrink-0" />
           {!sidebarCollapsed && <span>Sign Out</span>}
         </button>
@@ -145,20 +145,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Mobile sidebar (overlay) */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 flex flex-col transition-transform duration-300 lg:hidden ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
-        style={{ background: 'rgba(10,10,15,0.98)', borderRight: '1px solid rgba(201,168,76,0.12)' }}>
-        <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: 'rgba(201,168,76,0.12)' }}>
+        style={{ background: 'rgba(10,10,15,0.98)', borderRight: '1px solid rgba(212,168,67,0.12)' }}>
+        <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: 'rgba(212,168,67,0.12)' }}>
           <div className="flex items-center gap-3">
             <div className="relative w-9 h-9 rounded-xl shrink-0"
-              style={{ border: '1px solid rgba(201,168,76,0.3)' }}>
+              style={{ border: '1px solid rgba(212,168,67,0.3)' }}>
               <Image src="/image.png" alt="Logo" fill className="object-contain rounded-xl" />
             </div>
             <div>
               <p className="text-xs font-semibold gold-text leading-tight">{electionName}</p>
-              <p className="text-xs" style={{ color: 'rgba(245,240,232,0.35)' }}>Admin Panel</p>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Admin Panel</p>
             </div>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-white/5">
-            <X size={18} style={{ color: '#F5F0E8' }} />
+            <X size={18} style={{ color: '#FFFFFF' }} />
           </button>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -167,7 +167,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             return (
               <Link key={href} href={href}
                 className={`sidebar-item flex items-center gap-3 px-3 py-2.5 text-sm ${active ? 'active' : ''}`}
-                style={{ color: active ? '#C9A84C' : 'rgba(245,240,232,0.6)' }}>
+                style={{ color: active ? '#4CAF50' : 'rgba(255,255,255,0.6)' }}>
                 <Icon size={16} className="shrink-0" />
                 <span className="truncate">{label}</span>
                 {active && <ChevronRight size={14} className="ml-auto shrink-0" />}
@@ -178,7 +178,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="px-3 pb-6">
           <button onClick={logout}
             className="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 text-sm"
-            style={{ color: 'rgba(245,240,232,0.4)' }}>
+            style={{ color: 'rgba(255,255,255,0.4)' }}>
             <LogOut size={16} /> Sign Out
           </button>
         </div>
@@ -187,7 +187,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Desktop sidebar */}
       <aside className={`hidden lg:flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'} shrink-0 border-r`}
         style={{
-          borderColor: 'rgba(201,168,76,0.12)',
+          borderColor: 'rgba(212,168,67,0.12)',
           background: 'rgba(10,10,15,0.95)',
           boxShadow: '0 18px 48px rgba(0,0,0,0.26)',
         }}>
@@ -195,14 +195,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-auto lg:rounded-[28px] lg:border lg:border-[rgba(201,168,76,0.12)] lg:shadow-[0_18px_48px_rgba(0,0,0,0.26)]"
+      <main className="flex-1 flex flex-col min-w-0 overflow-auto lg:rounded-[28px] lg:border lg:border-[rgba(212,168,67,0.12)] lg:shadow-[0_18px_48px_rgba(0,0,0,0.26)]"
         style={{ background: 'rgba(10,10,15,0.55)', backdropFilter: 'blur(18px)' }}>
         {/* Top bar with mobile menu + collapse buttons */}
         <div className="sticky top-0 z-30 flex items-center gap-3 px-4 lg:px-6 py-3 border-b lg:hidden"
-          style={{ borderColor: 'rgba(201,168,76,0.12)', background: 'rgba(10,10,15,0.95)', backdropFilter: 'blur(12px)' }}>
+          style={{ borderColor: 'rgba(212,168,67,0.12)', background: 'rgba(10,10,15,0.95)', backdropFilter: 'blur(12px)' }}>
           <button onClick={() => setSidebarOpen(true)}
             className="p-2 -ml-1 rounded-lg hover:bg-white/5">
-            <Menu size={20} style={{ color: '#F5F0E8' }} />
+            <Menu size={20} style={{ color: '#FFFFFF' }} />
           </button>
           <div className="flex items-center gap-2 min-w-0">
             <div className="relative w-7 h-7 shrink-0">
@@ -216,7 +216,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="hidden lg:block">
           <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="fixed left-[13px] bottom-6 z-30 p-1.5 rounded-lg transition-opacity hover:bg-white/5"
-            style={{ color: 'rgba(245,240,232,0.3)' }}
+            style={{ color: 'rgba(255,255,255,0.3)' }}
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
             <ChevronRight size={14} className={`transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`} />
           </button>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient, createAuthAdminClient } from '@/lib/supabase-server'
 import { createInviteToken } from '@/lib/invite'
-import { sendAdminInviteEmail } from '@/lib/mailgun'
+import { sendAdminInviteEmail } from '@/lib/email-service'
 import { logAuth, logError } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {

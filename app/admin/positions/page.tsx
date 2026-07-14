@@ -118,7 +118,7 @@ export default function PositionsPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-full">
-      <Loader2 className="animate-spin" style={{ color: '#C9A84C' }} />
+      <Loader2 className="animate-spin" style={{ color: '#4CAF50' }} />
     </div>
   )
 
@@ -127,7 +127,7 @@ export default function PositionsPage() {
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold gold-text mb-1">Positions & Candidates</h1>
-          <p className="text-sm" style={{ color: 'rgba(245,240,232,0.45)' }}>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
             Manage election positions and add candidates
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function PositionsPage() {
       {/* New position form */}
       {showNewPosition && (
         <div className="glass-card rounded-2xl p-6 mb-6 animate-fade-up">
-          <h3 className="font-display text-lg font-semibold mb-4" style={{ color: '#F5F0E8' }}>
+          <h3 className="font-display text-lg font-semibold mb-4" style={{ color: '#FFFFFF' }}>
             New Position
           </h3>
           <div className="space-y-4">
@@ -172,12 +172,12 @@ export default function PositionsPage() {
           style={{ background: 'rgba(10,10,15,0.85)', backdropFilter: 'blur(8px)' }}>
           <div className="glass-card rounded-2xl p-5 sm:p-6 w-full max-w-lg">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display text-xl font-semibold" style={{ color: '#F5F0E8' }}>Bulk Import</h3>
+              <h3 className="font-display text-xl font-semibold" style={{ color: '#FFFFFF' }}>Bulk Import</h3>
               <button onClick={() => setShowBulk(false)}>
-                <X size={18} style={{ color: 'rgba(245,240,232,0.4)' }} />
+                <X size={18} style={{ color: 'rgba(255,255,255,0.4)' }} />
               </button>
             </div>
-            <p className="text-xs mb-3" style={{ color: 'rgba(245,240,232,0.45)' }}>
+            <p className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>
               Paste CSV with format: <strong>Position,Full Name,Class,Manifesto</strong>. The header row is optional.
             </p>
             <textarea
@@ -210,7 +210,7 @@ export default function PositionsPage() {
       <div className="space-y-4">
         {positions.length === 0 && (
           <div className="text-center py-16 glass-card rounded-2xl">
-            <p style={{ color: 'rgba(245,240,232,0.3)' }} className="text-sm">
+            <p style={{ color: 'rgba(255,255,255,0.3)' }} className="text-sm">
               No positions yet. Add your first position above.
             </p>
           </div>
@@ -272,29 +272,29 @@ function PositionCard({
     <div className="glass-card rounded-2xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-4 px-6 py-4 cursor-pointer" onClick={onToggle}>
-        <GripVertical size={16} style={{ color: 'rgba(245,240,232,0.2)' }} />
+        <GripVertical size={16} style={{ color: 'rgba(255,255,255,0.2)' }} />
         <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
-          style={{ background: 'rgba(201,168,76,0.15)', color: '#C9A84C' }}>{idx + 1}</span>
+          style={{ background: 'rgba(76,175,80,0.15)', color: '#4CAF50' }}>{idx + 1}</span>
         <div className="flex-1 min-w-0">
-          <p className="font-display text-lg font-semibold" style={{ color: '#F5F0E8' }}>{position.title}</p>
+          <p className="font-display text-lg font-semibold" style={{ color: '#FFFFFF' }}>{position.title}</p>
           {position.description && (
-            <p className="text-xs truncate" style={{ color: 'rgba(245,240,232,0.4)' }}>{position.description}</p>
+            <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>{position.description}</p>
           )}
         </div>
         <span className="text-xs px-2.5 py-1 rounded-full"
-          style={{ background: 'rgba(201,168,76,0.1)', color: '#C9A84C' }}>
+          style={{ background: 'rgba(76,175,80,0.1)', color: '#4CAF50' }}>
           {position.candidates?.length ?? 0} candidate{(position.candidates?.length ?? 0) !== 1 ? 's' : ''}
         </span>
         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
           <button onClick={() => setEditing(!editing)}
-            className="p-2 rounded-lg hover:bg-white/5 transition-colors" style={{ color: '#C9A84C' }}>
+            className="p-2 rounded-lg hover:bg-white/5 transition-colors" style={{ color: '#4CAF50' }}>
             <Edit2 size={14} />
           </button>
           <button onClick={onDelete}
             className="p-2 rounded-lg hover:bg-red-900/20 transition-colors" style={{ color: '#E74C3C' }}>
             <Trash2 size={14} />
           </button>
-          <div style={{ color: 'rgba(245,240,232,0.4)' }}>
+          <div style={{ color: 'rgba(255,255,255,0.4)' }}>
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </div>
         </div>
@@ -302,7 +302,7 @@ function PositionCard({
 
       {/* Edit form */}
       {editing && (
-        <div className="px-6 pb-4 border-t" style={{ borderColor: 'rgba(201,168,76,0.1)' }}>
+        <div className="px-6 pb-4 border-t" style={{ borderColor: 'rgba(212,168,67,0.1)' }}>
           <div className="pt-4 space-y-3">
             <input value={title} onChange={e => setTitle(e.target.value)}
               className="input-field w-full px-4 py-2.5 rounded-xl text-sm" />
@@ -318,10 +318,10 @@ function PositionCard({
 
       {/* Candidates panel */}
       {expanded && (
-        <div className="border-t" style={{ borderColor: 'rgba(201,168,76,0.1)' }}>
+        <div className="border-t" style={{ borderColor: 'rgba(212,168,67,0.1)' }}>
           <div className="px-6 py-4">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-sm font-semibold" style={{ color: 'rgba(245,240,232,0.7)' }}>Candidates</h4>
+              <h4 className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>Candidates</h4>
               <button onClick={() => setShowCandidateForm(true)}
                 className="btn-ghost px-4 py-1.5 rounded-lg text-xs flex items-center gap-1.5">
                 <Plus size={12} /> Add Candidate
@@ -347,33 +347,33 @@ function PositionCard({
                     onCancel={() => setEditingCandidateId(null)} />
                 ) : (
                   <div key={candidate.id} className="glass-card rounded-xl overflow-hidden">
-                    <div className="h-40 relative" style={{ background: 'linear-gradient(135deg, #1A4A3A22, #0A0A0F)' }}>
+                    <div className="h-40 relative" style={{ background: 'linear-gradient(135deg, #1A1A2E22, #0A1A0A)' }}>
                       {candidate.photo_url ? (
                         <img src={candidate.photo_url} alt={candidate.full_name}
                           className="w-full h-full object-cover object-top" />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <User size={40} style={{ color: 'rgba(201,168,76,0.2)' }} />
+                          <User size={40} style={{ color: 'rgba(212,168,67,0.2)' }} />
                         </div>
                       )}
                     </div>
                     <div className="p-3">
                       <div className="flex items-center justify-between mb-1">
-                        <p className="font-display font-semibold text-sm" style={{ color: '#F5F0E8' }}>
+                        <p className="font-display font-semibold text-sm" style={{ color: '#FFFFFF' }}>
                           {candidate.full_name}
                         </p>
                         <button onClick={() => setEditingCandidateId(candidate.id)}
                           className="p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0"
-                          style={{ color: '#C9A84C' }}>
+                          style={{ color: '#4CAF50' }}>
                           <Edit2 size={12} />
                         </button>
                       </div>
                       {candidate.class && (
-                        <p className="text-xs" style={{ color: '#C9A84C' }}>{candidate.class}</p>
+                        <p className="text-xs" style={{ color: '#4CAF50' }}>{candidate.class}</p>
                       )}
                       <button onClick={() => deleteCandidate(candidate.id)}
                         className="mt-2 text-xs flex items-center gap-1 hover:text-red-400 transition-colors"
-                        style={{ color: 'rgba(245,240,232,0.3)' }}>
+                        style={{ color: 'rgba(255,255,255,0.3)' }}>
                         <Trash2 size={11} /> Remove
                       </button>
                     </div>
@@ -383,7 +383,7 @@ function PositionCard({
             </div>
 
             {(position.candidates ?? []).length === 0 && !showCandidateForm && (
-              <p className="text-xs text-center py-4" style={{ color: 'rgba(245,240,232,0.25)' }}>
+              <p className="text-xs text-center py-4" style={{ color: 'rgba(255,255,255,0.25)' }}>
                 No candidates yet. Add candidates for this position.
               </p>
             )}
@@ -507,8 +507,8 @@ function CandidateForm({ positionId, candidate, onSave, onCancel }: {
         <div className="fixed inset-0 z-50 flex items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.85)' }}>
           <div className="w-full max-w-lg mx-4 glass-card rounded-2xl overflow-hidden">
-            <div className="p-4 border-b" style={{ borderColor: 'rgba(201,168,76,0.15)' }}>
-              <h4 className="font-display font-semibold" style={{ color: '#F5F0E8' }}>Crop Photo</h4>
+            <div className="p-4 border-b" style={{ borderColor: 'rgba(212,168,67,0.15)' }}>
+              <h4 className="font-display font-semibold" style={{ color: '#FFFFFF' }}>Crop Photo</h4>
             </div>
             <div className="relative" style={{ height: 350 }}>
               <Cropper
@@ -539,7 +539,7 @@ function CandidateForm({ positionId, candidate, onSave, onCancel }: {
       )}
 
       <div className="emerald-card rounded-xl p-4 mb-4">
-        <h5 className="text-sm font-semibold mb-3" style={{ color: '#F5F0E8' }}>{isEditing ? 'Edit Candidate' : 'New Candidate'}</h5>
+        <h5 className="text-sm font-semibold mb-3" style={{ color: '#FFFFFF' }}>{isEditing ? 'Edit Candidate' : 'New Candidate'}</h5>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <input value={name} onChange={e => setName(e.target.value)}
             className="input-field px-3 py-2.5 rounded-lg text-sm" placeholder="Full Name *" />
@@ -558,22 +558,22 @@ function CandidateForm({ positionId, candidate, onSave, onCancel }: {
               <button onClick={() => { setPhoto(null); setPreview(null) }}
                 className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center"
                 style={{ background: 'rgba(10,10,15,0.8)' }}>
-                <X size={10} style={{ color: '#F5F0E8' }} />
+                <X size={10} style={{ color: '#FFFFFF' }} />
               </button>
             </div>
           ) : (
             <button onClick={() => fileRef.current?.click()}
               className="w-16 h-16 rounded-xl border-2 border-dashed flex items-center justify-center shrink-0 transition-colors hover:border-yellow-600"
-              style={{ borderColor: 'rgba(201,168,76,0.3)' }}>
-              <Upload size={20} style={{ color: 'rgba(201,168,76,0.5)' }} />
+              style={{ borderColor: 'rgba(212,168,67,0.3)' }}>
+              <Upload size={20} style={{ color: 'rgba(212,168,67,0.5)' }} />
             </button>
           )}
           <div>
-            <p className="text-xs font-medium mb-0.5" style={{ color: 'rgba(245,240,232,0.7)' }}>
+            <p className="text-xs font-medium mb-0.5" style={{ color: 'rgba(255,255,255,0.7)' }}>
               Candidate Photo
             </p>
             <button onClick={() => fileRef.current?.click()}
-              className="text-xs" style={{ color: '#C9A84C' }}>
+              className="text-xs" style={{ color: '#4CAF50' }}>
               {preview ? 'Change photo' : 'Upload photo'}
             </button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />

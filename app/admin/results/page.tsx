@@ -54,7 +54,7 @@ export default function ResultsPage() {
     setDownloadingImage(true)
     try {
       const dataUrl = await toPng(resultsRef.current, {
-        backgroundColor: '#0A0A0F',
+        backgroundColor: '#0A1A0A',
         pixelRatio: 2,
       })
       const a = document.createElement('a')
@@ -70,7 +70,7 @@ export default function ResultsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Loader2 className="animate-spin" style={{ color: '#C9A84C' }} />
+        <Loader2 className="animate-spin" style={{ color: '#4CAF50' }} />
       </div>
     )
   }
@@ -80,7 +80,7 @@ export default function ResultsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold gold-text mb-1">Election Results</h1>
-          <p className="text-sm" style={{ color: 'rgba(245,240,232,0.45)' }}>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
             {totalVoted} of {totalVoters} students voted ({totalVoters > 0 ? Math.round((totalVoted / totalVoters) * 100) : 0}% turnout)
           </p>
         </div>
@@ -110,20 +110,20 @@ export default function ResultsPage() {
           return (
             <div key={position.id} className="glass-card rounded-2xl overflow-hidden">
               <div className="px-5 sm:px-6 py-5 border-b flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-                style={{ borderColor: 'rgba(201,168,76,0.1)' }}>
+                style={{ borderColor: 'rgba(212,168,67,0.1)' }}>
                 <div>
-                  <h2 className="font-display text-xl font-semibold" style={{ color: '#F5F0E8' }}>
+                  <h2 className="font-display text-xl font-semibold" style={{ color: '#FFFFFF' }}>
                     {position.title}
                   </h2>
-                  <p className="text-xs mt-0.5" style={{ color: 'rgba(245,240,232,0.4)' }}>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
                     {totalVotes} total votes
                   </p>
                 </div>
                 {winner && totalVotes > 0 && (
                   <div className="flex items-center gap-2 px-4 py-2 rounded-xl w-fit"
-                    style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)' }}>
-                    <Trophy size={14} style={{ color: '#C9A84C' }} />
-                    <span className="text-sm font-semibold" style={{ color: '#C9A84C' }}>
+                    style={{ background: 'rgba(212,168,67,0.1)', border: '1px solid rgba(212,168,67,0.2)' }}>
+                    <Trophy size={14} style={{ color: '#4CAF50' }} />
+                    <span className="text-sm font-semibold" style={{ color: '#4CAF50' }}>
                       {winner.full_name}
                     </span>
                   </div>
@@ -132,7 +132,7 @@ export default function ResultsPage() {
 
               <div className="p-5 sm:p-6 space-y-4">
                 {candidates.length === 0 && (
-                  <p className="text-sm text-center py-4" style={{ color: 'rgba(245,240,232,0.25)' }}>
+                  <p className="text-sm text-center py-4" style={{ color: 'rgba(255,255,255,0.25)' }}>
                     No candidates added
                   </p>
                 )}
@@ -144,7 +144,7 @@ export default function ResultsPage() {
                   return (
                     <div key={candidate.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                       <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0"
-                        style={{ background: 'linear-gradient(135deg, #1A4A3A, #0A0A0F)' }}>
+                        style={{ background: 'linear-gradient(135deg, #1A1A2E, #0A1A0A)' }}>
                         {candidate.photo_url ? (
                           <img
                             src={candidate.photo_url}
@@ -153,7 +153,7 @@ export default function ResultsPage() {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <User size={20} style={{ color: 'rgba(201,168,76,0.3)' }} />
+                            <User size={20} style={{ color: 'rgba(212,168,67,0.3)' }} />
                           </div>
                         )}
                       </div>
@@ -161,34 +161,34 @@ export default function ResultsPage() {
                       <div className="flex-1 min-w-0 w-full">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-1.5">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-medium" style={{ color: '#F5F0E8' }}>
+                            <p className="text-sm font-medium" style={{ color: '#FFFFFF' }}>
                               {candidate.full_name}
                             </p>
-                            {isWinner && <Trophy size={12} style={{ color: '#C9A84C' }} />}
+                            {isWinner && <Trophy size={12} style={{ color: '#4CAF50' }} />}
                             {candidate.class && (
-                              <span className="text-xs" style={{ color: 'rgba(245,240,232,0.4)' }}>
+                              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
                                 {candidate.class}
                               </span>
                             )}
                           </div>
                           <div className="flex items-center gap-3 shrink-0">
-                            <span className="text-sm font-bold" style={{ color: isWinner ? '#C9A84C' : '#F5F0E8' }}>
+                            <span className="text-sm font-bold" style={{ color: isWinner ? '#4CAF50' : '#FFFFFF' }}>
                               {pct.toFixed(1)}%
                             </span>
-                            <span className="text-xs w-14 text-right" style={{ color: 'rgba(245,240,232,0.4)' }}>
+                            <span className="text-xs w-14 text-right" style={{ color: 'rgba(255,255,255,0.4)' }}>
                               {candidate.vote_count} vote{candidate.vote_count !== 1 ? 's' : ''}
                             </span>
                           </div>
                         </div>
                         <div className="h-2 rounded-full overflow-hidden"
-                          style={{ background: 'rgba(201,168,76,0.08)' }}>
+                          style={{ background: 'rgba(212,168,67,0.08)' }}>
                           <div
                             className="h-full rounded-full transition-all duration-700"
                             style={{
                               width: `${pct}%`,
                               background: isWinner
-                                ? 'linear-gradient(90deg, #9B7A2E, #E8C97A)'
-                                : 'linear-gradient(90deg, #1A4A3A, #3D8A6C)',
+                                ? 'linear-gradient(90deg, #2E7D32, #66BB6A)'
+                                : 'linear-gradient(90deg, #1A1A2E, #3A3A50)',
                             }}
                           />
                         </div>

@@ -15,21 +15,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
     }
 
-    let identifier: string
+    let matricNumber: string
+    let email: string
     try {
       const body = await req.json()
-      identifier = body.identifier ?? body.matric_number
+      matricNumber = body.matric_number
+      email = body.email
     } catch {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
-    if (!identifier || typeof identifier !== 'string') {
-      return NextResponse.json({ error: 'Email or matric number is required' }, { status: 400 })
+    if (!matricNumber || typeof matricNumber !== 'string') {
+      return NextResponse.json({ error: 'Matric number is required' }, { status: 400 })
+    }
+    if (!email || typeof email !== 'string') {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    identifier = identifier.trim()
-    const isEmail = identifier.includes('@')
-    const lookupValue = isEmail ? identifier.toLowerCase() : identifier.toUpperCase()
+    const normalizedMatric = matricNumber.trim().toUpperCase()
+    const normalizedEmail = email.trim().toLowerCase()
 
     const supabase = createAdminClient()
 
@@ -42,7 +46,8 @@ export async function POST(req: NextRequest) {
     const { data: student, error: dbError } = await supabase
       .from('students')
       .select('id, email, matric_number, has_voted')
-      .eq(isEmail ? 'email' : 'matric_number', lookupValue)
+      .eq('matric_number', normalizedMatric)
+      .eq('email', normalizedEmail)
       .maybeSingle()
 
     if (dbError) {
@@ -51,13 +56,31 @@ export async function POST(req: NextRequest) {
     }
 
     if (!student) {
-      logAuth('login-direct', identifier, 'NOT_FOUND')
-      return NextResponse.json({ error: 'No student found with this email or matric number' }, { status: 404 })
+      logAuth('login-direct', normalizedMatric, 'NOT_FOUND')
+      return NextResponse.json({ error: 'No student found with this matric number and email combination' }, { status: 404 })
     }
 
     if (settings?.voting_open && student.has_voted) {
-      logAuth('login-direct', identifier, 'ALREADY_VOTED')
+      logAuth('login-direct', normalizedMatric, 'ALREADY_VOTED')
       return NextResponse.json({ error: 'You have already voted' }, { status: 401 })
+    }
+
+    if (ip !== 'unknown') {
+      const { data: ipConflict } = await supabase
+        .from('students')
+        .select('id')
+        .eq('voted_from_ip', ip)
+        .neq('id', student.id)
+        .limit(1)
+        .maybeSingle()
+
+      if (ipConflict) {
+        logAuth('login-direct', normalizedMatric, `BLOCKED_IP_REUSE (ip: ${ip})`)
+        return NextResponse.json(
+          { error: 'This device or network has already been used to vote in this election. If this is a mistake, contact an election administrator.' },
+          { status: 403 }
+        )
+      }
     }
 
     const exp = getCookieExpiry()
@@ -73,7 +96,7 @@ export async function POST(req: NextRequest) {
       voting_open: settings?.voting_open ?? false,
     })
     response.headers.append('Set-Cookie', cookie)
-    logAuth('login-direct', identifier, 'SUCCESS')
+    logAuth('login-direct', normalizedMatric, 'SUCCESS')
     return response
   } catch (err) {
     logError('login-direct', 'unknown', err instanceof Error ? err.message : 'unknown')

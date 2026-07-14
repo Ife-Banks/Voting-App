@@ -1,5 +1,5 @@
-# 🗳️ SRC Voting App
-### Nigerian School Student Representative Council Election System
+# NASSA Voting App
+### Natural and Applied Sciences Student Association Executive Election System
 
 A full-featured, secure digital voting application built with **Next.js 14** and **Supabase**.
 
@@ -8,15 +8,18 @@ A full-featured, secure digital voting application built with **Next.js 14** and
 ## ✨ Features
 
 ### Student Portal
-- Secure email + password login
+- OTP email login (with fallback to matric + email if OTP is disabled by admin)
 - Vote for all positions in a single session
 - Beautiful candidate cards with photos
 - Progress indicator across positions
 - One vote per student enforcement
+- Live results display after voting
 
 ### Admin Portal
 - Dashboard with live statistics & voter turnout
 - Open/Close voting with one click
+- Toggle OTP verification on/off (fallback mode for email issues)
+- Toggle results visibility
 - Manage election name and school name
 - Add positions (President, VP, Secretary, etc.)
 - Add candidates with photos, class, and manifesto
@@ -129,6 +132,25 @@ src-voting/
 ---
 
 ## 🎨 Design
-Deep emerald green & gold palette inspired by Nigerian elegance.
+Black, gold & white palette.
 Typography: Cormorant Garamond (display) + DM Sans (body).
+
+## Separate Supabase Projects
+
+ESSA and NASSA run on **separate Supabase projects**. This is critical — student data, votes, and admin accounts must never mix between the two associations.
+
+| Branch | Supabase Project | `.env.local` source |
+|--------|------------------|---------------------|
+| `ESSA` | `ESSA Voting` | `.env` (ESSA project) |
+| `NASSA` | `NASSA Voting` | `.env` (NASSA project) |
+
+**Steps to isolate:**
+1. Create a new Supabase project named `NASSA Voting`
+2. Run `supabase_schema.sql` in its SQL Editor
+3. Create a `candidates` storage bucket (public)
+4. Copy the new project's URL and anon key into your `.env.local`
+5. Invite admin users via the new project's Auth settings
+6. Import students via the admin panel once the app is running
+
+> Never copy `.env` from the ESSA project to the NASSA project or vice versa. Each must have its own independent Supabase project.
 # Voting-App  

@@ -20,21 +20,21 @@ html {
 
 body {
   font-family: var(--font-body);
-  color: #F5F0E8;
+  color: #FFFFFF;
   min-height: 100vh;
   overflow-x: hidden;
   position: relative;
   isolation: isolate;
   background:
-    radial-gradient(circle at 14% 14%, rgba(76, 175, 80, 0.14), transparent 24%),
-    radial-gradient(circle at 86% 10%, rgba(201, 168, 76, 0.1), transparent 22%),
-    radial-gradient(circle at 50% 100%, rgba(45, 107, 84, 0.16), transparent 28%),
-    linear-gradient(180deg, #0b170b 0%, #0a1a0a 55%, #0a0a0f 100%);
+    radial-gradient(circle at 14% 14%, rgba(76, 175, 80, 0.10), transparent 24%),
+    radial-gradient(circle at 86% 10%, rgba(76, 175, 80, 0.06), transparent 22%),
+    radial-gradient(circle at 50% 100%, rgba(13, 40, 24, 0.20), transparent 28%),
+    linear-gradient(180deg, #0b1b0b 0%, #0A1A0A 55%, #0A1A0A 100%);
 }
 
 ::selection {
   background: rgba(76, 175, 80, 0.28);
-  color: #F5F0E8;
+  color: #FFFFFF;
 }
 
 /* Scrollbar */
@@ -55,7 +55,7 @@ body {
 
 /* Shared text treatments */
 .green-text {
-  background: linear-gradient(135deg, #4CAF50, #81C784, #2E7D32, #81C784);
+  background: linear-gradient(135deg, #4CAF50, #66BB6A, #81C784, #66BB6A);
   background-size: 300% 300%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -64,7 +64,7 @@ body {
 }
 
 .gold-text {
-  background: linear-gradient(135deg, #C9A84C, #E8C97A, #9B7A2E, #E8C97A);
+  background: linear-gradient(135deg, #D4A843, #E8C97A, #9B7A2E, #E8C97A);
   background-size: 300% 300%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -140,18 +140,18 @@ body {
 
 .glass-card {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
-  border: 1px solid rgba(201, 168, 76, 0.14);
+  border: 1px solid rgba(212, 168, 67, 0.14);
 }
 
 .glass-card:hover {
-  border-color: rgba(201, 168, 76, 0.28);
+  border-color: rgba(212, 168, 67, 0.28);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.04));
   transform: translateY(-2px);
 }
 
 .emerald-card {
-  background: linear-gradient(135deg, rgba(26, 74, 58, 0.82), rgba(45, 107, 84, 0.38));
-  border: 1px solid rgba(76, 175, 80, 0.24);
+  background: linear-gradient(135deg, rgba(13, 40, 24, 0.82), rgba(26, 58, 34, 0.38));
+  border: 1px solid rgba(212, 168, 67, 0.24);
 }
 
 .page-shell {
@@ -168,8 +168,8 @@ body {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(circle at 20% 20%, rgba(76, 175, 80, 0.12), transparent 18%),
-    radial-gradient(circle at 80% 0%, rgba(201, 168, 76, 0.08), transparent 20%);
+    radial-gradient(circle at 20% 20%, rgba(76, 175, 80, 0.10), transparent 18%),
+    radial-gradient(circle at 80% 0%, rgba(212, 168, 67, 0.06), transparent 20%);
 }
 
 .page-shell > * {
@@ -190,7 +190,7 @@ body {
 }
 
 .btn-gold {
-  background: linear-gradient(135deg, #4CAF50, #81C784);
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
   color: #0A1A0A;
   font-weight: 700;
   box-shadow:
@@ -199,7 +199,7 @@ body {
 }
 
 .btn-gold:hover {
-  background: linear-gradient(135deg, #81C784, #4CAF50);
+  background: linear-gradient(135deg, #66BB6A, #4CAF50);
   transform: translateY(-1px);
   box-shadow:
     0 16px 28px rgba(76, 175, 80, 0.34),
@@ -212,24 +212,24 @@ body {
 
 .btn-ghost {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(76, 175, 80, 0.34);
-  color: #4CAF50;
+  border: 1px solid rgba(212, 168, 67, 0.34);
+  color: #D4A843;
   box-shadow:
     0 10px 22px rgba(0, 0, 0, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .btn-ghost:hover {
-  background: rgba(76, 175, 80, 0.1);
-  border-color: rgba(76, 175, 80, 0.6);
+  background: rgba(212, 168, 67, 0.1);
+  border-color: rgba(212, 168, 67, 0.6);
   transform: translateY(-1px);
 }
 
 /* Inputs */
 .input-field {
   background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(76, 175, 80, 0.18);
-  color: #F5F0E8;
+  border: 1px solid rgba(212, 168, 67, 0.18);
+  color: #FFFFFF;
   box-shadow:
     inset 0 1px 2px rgba(0, 0, 0, 0.18),
     0 1px 0 rgba(255, 255, 255, 0.03);
@@ -250,7 +250,7 @@ body {
 }
 
 .input-field::placeholder {
-  color: rgba(245, 240, 232, 0.35);
+  color: rgba(255, 255, 255, 0.35);
 }
 
 /* Candidate card */
@@ -282,7 +282,7 @@ body {
 }
 
 .candidate-card.selected::after {
-  content: '✓';
+  content: '\2713';
   position: absolute;
   top: 12px;
   right: 12px;
@@ -346,7 +346,7 @@ body {
 .badge-open {
   background: rgba(76, 175, 80, 0.2);
   border: 1px solid rgba(76, 175, 80, 0.5);
-  color: #81C784;
+  color: #66BB6A;
 }
 
 .badge-closed {

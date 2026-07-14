@@ -46,28 +46,28 @@ export default function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden px-4">
       <div className="fixed inset-0 z-0">
         <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #1A4A3A, transparent)' }} />
+          style={{ background: 'radial-gradient(circle, #1A1A2E, transparent)' }} />
         <div className="absolute bottom-0 right-1/4 w-80 h-80 rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #C9A84C, transparent)' }} />
+          style={{ background: 'radial-gradient(circle, #D4A843, transparent)' }} />
       </div>
 
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-10 animate-fade-up">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6"
-            style={{ background: 'linear-gradient(135deg, #1A4A3A, #2D6B54)', border: '1px solid rgba(201,168,76,0.3)' }}>
-            <Shield size={36} style={{ color: '#C9A84C' }} />
+            style={{ background: 'linear-gradient(135deg, #1A1A2E, #2A2A3E)', border: '1px solid rgba(212,168,67,0.3)' }}>
+            <Shield size={36} style={{ color: '#4CAF50' }} />
           </div>
           <h1 className="text-3xl font-display font-bold gold-text mb-2">Admin Sign In</h1>
-          <p className="text-sm" style={{ color: 'rgba(245,240,232,0.5)' }}>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
             Election management panel
           </p>
         </div>
 
         <div className="glass-card rounded-2xl p-8 animate-fade-up delay-2">
-          <h2 className="text-xl font-display font-semibold mb-2" style={{ color: '#F5F0E8' }}>
+          <h2 className="text-xl font-display font-semibold mb-2" style={{ color: '#FFFFFF' }}>
             Sign in to continue
           </h2>
-          <p className="text-xs mb-6" style={{ color: 'rgba(245,240,232,0.45)' }}>
+          <p className="text-xs mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
             Enter your admin credentials
           </p>
 
@@ -81,7 +81,7 @@ export default function AdminLoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'rgba(245,240,232,0.7)' }}>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
                 Email Address
               </label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
@@ -89,7 +89,7 @@ export default function AdminLoginPage() {
                 placeholder="admin@school.edu.ng" required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'rgba(245,240,232,0.7)' }}>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
                 Password
               </label>
               <input type="password" value={password} onChange={e => setPassword(e.target.value)}
@@ -109,13 +109,13 @@ export default function AdminLoginPage() {
 
           <p className="text-center mt-6">
             <a href="/login" className="text-xs hover:underline"
-              style={{ color: 'rgba(201,168,76,0.6)' }}>
+              style={{ color: 'rgba(76,175,80,0.6)' }}>
               <ArrowLeft size={12} className="inline mr-1" />Back to student sign in
             </a>
           </p>
         </div>
 
-        <p className="text-center text-xs mt-8" style={{ color: 'rgba(245,240,232,0.25)' }}>
+        <p className="text-center text-xs mt-8" style={{ color: 'rgba(255,255,255,0.25)' }}>
           Powered by SRC Voting System &bull; {new Date().getFullYear()}
         </p>
       </div>

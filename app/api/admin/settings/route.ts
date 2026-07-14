@@ -78,6 +78,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ data })
     }
 
+    if (action === 'toggle_otp') {
+      const { otp_enabled } = body as { otp_enabled: boolean }
+      const { data, error } = await supabase
+        .from('settings')
+        .update({ otp_enabled })
+        .eq('id', 1)
+        .select()
+        .single()
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ data })
+    }
+
     if (action === 'save_settings') {
       const { election_name, school_name } = body as { election_name: string; school_name: string }
       const { data, error } = await supabase

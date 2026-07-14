@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
-import { sendOtpEmail } from '@/lib/mailgun'
+import { sendOtpEmail } from '@/lib/email-service'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { logAuth, logError } from '@/lib/logger'
 import { randomInt } from 'crypto'
@@ -52,9 +52,14 @@ export async function POST(req: NextRequest) {
 
     const { data: settings } = await supabase
       .from('settings')
-      .select('voting_open')
+      .select('voting_open, otp_enabled')
       .eq('id', 1)
       .maybeSingle()
+
+    if (settings?.otp_enabled === false) {
+      logAuth('request-otp', identifier, 'OTP_DISABLED')
+      return NextResponse.json({ error: 'OTP verification is currently disabled. Please sign in with your matric number and email instead.' }, { status: 403 })
+    }
 
     if (!settings?.voting_open) {
       logAuth('request-otp', identifier, 'VOTING_CLOSED')

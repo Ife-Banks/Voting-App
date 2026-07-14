@@ -3,6 +3,7 @@ export interface Student {
   email: string
   matric_number: string | null
   has_voted: boolean
+  voted_from_ip: string | null
   otp_code: string | null
   otp_expires_at: string | null
   otp_attempts: number | null
@@ -41,6 +42,7 @@ export interface Settings {
   id: number
   voting_open: boolean
   results_public: boolean
+  otp_enabled: boolean
   election_name: string
   school_name: string
   updated_at: string

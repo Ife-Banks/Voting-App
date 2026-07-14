@@ -37,6 +37,17 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient()
 
+    const { data: settings } = await supabase
+      .from('settings')
+      .select('otp_enabled, voting_open, results_public')
+      .eq('id', 1)
+      .maybeSingle()
+
+    if (settings?.otp_enabled === false) {
+      logAuth('verify-otp', identifier, 'OTP_DISABLED')
+      return NextResponse.json({ error: 'OTP verification is currently disabled. Please sign in with your matric number and email instead.' }, { status: 403 })
+    }
+
     const { data: student, error: dbError } = await supabase
       .from('students')
       .select('id, email, matric_number, has_voted, otp_code, otp_expires_at, otp_attempts')
@@ -76,12 +87,6 @@ export async function POST(req: NextRequest) {
       logAuth('verify-otp', identifier, `WRONG_OTP (attempt ${newAttempts})`)
       return NextResponse.json({ error: 'Invalid OTP code' }, { status: 401 })
     }
-
-    const { data: settings } = await supabase
-      .from('settings')
-      .select('voting_open, results_public')
-      .eq('id', 1)
-      .maybeSingle()
 
     if (settings?.voting_open && student.has_voted) {
       logAuth('verify-otp', identifier, 'ALREADY_VOTED')

@@ -94,7 +94,7 @@ export default function AdminsPage() {
         <h1 className="text-2xl sm:text-3xl font-bold text-white">Admin Management</h1>
         <button
           onClick={() => setShowInvite(!showInvite)}
-          className="px-4 py-2 bg-[#C9A84C] text-[#0A0A0F] rounded-lg font-semibold hover:bg-[#B8943F] transition-colors text-sm cursor-pointer whitespace-nowrap"
+          className="px-4 py-2 bg-[#4CAF50] text-[#0A1A0A] rounded-lg font-semibold hover:bg-[#43A047] transition-colors text-sm cursor-pointer whitespace-nowrap"
         >
           {showInvite ? 'Cancel' : 'Invite Admin'}
         </button>
@@ -120,7 +120,7 @@ export default function AdminsPage() {
                 value={inviteName}
                 onChange={e => setInviteName(e.target.value)}
                 placeholder="Admin's full name"
-                className="w-full px-4 py-3 bg-[#1A1A24] border border-[#20203A] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#C9A84C]"
+                className="w-full px-4 py-3 bg-[#1A1A24] border border-[#20203A] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#4CAF50]"
                 required
               />
             </div>
@@ -131,14 +131,14 @@ export default function AdminsPage() {
                 value={inviteEmail}
                 onChange={e => setInviteEmail(e.target.value)}
                 placeholder="admin@example.com"
-                className="w-full px-4 py-3 bg-[#1A1A24] border border-[#20203A] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#C9A84C]"
+                className="w-full px-4 py-3 bg-[#1A1A24] border border-[#20203A] rounded-xl text-white placeholder-gray-600 focus:outline-none focus:border-[#4CAF50]"
                 required
               />
             </div>
             <button
               type="submit"
               disabled={inviting}
-              className="px-6 py-3 bg-[#C9A84C] text-[#0A0A0F] rounded-xl font-semibold hover:bg-[#B8943F] transition-colors disabled:opacity-50 cursor-pointer"
+              className="px-6 py-3 bg-[#4CAF50] text-[#0A1A0A] rounded-xl font-semibold hover:bg-[#43A047] transition-colors disabled:opacity-50 cursor-pointer"
             >
               {inviting ? 'Sending Invite...' : 'Send Invitation'}
             </button>
@@ -148,7 +148,7 @@ export default function AdminsPage() {
 
       {loading ? (
         <div className="text-center py-12">
-          <div className="animate-spin w-8 h-8 border-2 border-[#C9A84C] border-t-transparent rounded-full mx-auto"></div>
+          <div className="animate-spin w-8 h-8 border-2 border-[#4CAF50] border-t-transparent rounded-full mx-auto"></div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -209,13 +209,13 @@ export default function AdminsPage() {
           <div className="bg-[#13131A] border border-[#20203A] rounded-2xl p-6 w-full max-w-md relative">
             <button onClick={closeModal}
               className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-white/5 cursor-pointer"
-              style={{ color: 'rgba(245,240,232,0.4)' }}>
+              style={{ color: 'rgba(255,255,255,0.4)' }}>
               <X size={18} />
             </button>
 
             <div className="text-center mb-6">
               <div className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4"
-                style={{ background: 'rgba(76,175,80,0.15)', border: '1px solid rgba(76,175,80,0.3)' }}>
+                style={{ background: 'rgba(212,168,67,0.15)', border: '1px solid rgba(212,168,67,0.3)' }}>
                 <CheckCircle2 size={28} style={{ color: '#4CAF50' }} />
               </div>
               <h2 className="text-xl font-semibold text-white mb-1">Admin Invited!</h2>

@@ -14,7 +14,7 @@ export default function VerifyOtpPage() {
   const [settings, setSettings] = useState<{ election_name: string; school_name: string } | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const matric_number = searchParams.get('matric') ?? ''
+  const identifier = searchParams.get('identifier') ?? ''
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function VerifyOtpPage() {
       })
       .catch(() => {})
 
-    if (!matric_number) {
+    if (!identifier) {
       router.replace('/login')
     }
   }, [])
@@ -65,6 +65,7 @@ export default function VerifyOtpPage() {
   }
 
   function handlePaste(e: React.ClipboardEvent) {
+    e.preventDefault()
     const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
     if (pasted.length === 6) {
       const digits = pasted.split('')
@@ -82,7 +83,7 @@ export default function VerifyOtpPage() {
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: matric_number, otp_code: otpCode }),
+        body: JSON.stringify({ identifier, otp_code: otpCode }),
       })
       const data = await res.json()
 
@@ -111,7 +112,7 @@ export default function VerifyOtpPage() {
       const res = await fetch('/api/auth/request-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matric_number }),
+        body: JSON.stringify({ identifier }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -125,15 +126,15 @@ export default function VerifyOtpPage() {
   return (
     <div className="page-shell min-h-screen px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto grid min-h-screen w-full max-w-6xl items-center gap-8 py-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="relative overflow-hidden rounded-[32px] border border-[rgba(201,168,76,0.12)] bg-[rgba(10,10,15,0.35)] p-6 sm:p-8 lg:p-10 backdrop-blur-xl">
+        <div className="relative overflow-hidden rounded-[32px] border border-[rgba(212,168,67,0.12)] bg-[rgba(10,10,15,0.35)] p-6 sm:p-8 lg:p-10 backdrop-blur-xl">
           <div className="absolute inset-0 pointer-events-none opacity-60"
             style={{
-              background: 'radial-gradient(circle at top left, rgba(76,175,80,0.18), transparent 28%), radial-gradient(circle at bottom right, rgba(201,168,76,0.1), transparent 30%)',
+              background: 'radial-gradient(circle at top left, rgba(212,168,67,0.18), transparent 28%), radial-gradient(circle at bottom right, rgba(212,168,67,0.1), transparent 30%)',
             }}
           />
 
           <div className="relative z-10 max-w-xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(76,175,80,0.18)] bg-white/5 px-4 py-2 text-xs text-[rgba(245,240,232,0.7)]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,168,67,0.18)] bg-white/5 px-4 py-2 text-xs text-[rgba(255,255,255,0.7)]">
               <Vote size={14} style={{ color: '#4CAF50' }} />
               Secure verification
             </div>
@@ -143,9 +144,9 @@ export default function VerifyOtpPage() {
                 <Image src="/image.png" alt="Logo" fill className="object-contain rounded-2xl" />
               </div>
               <h1 className="text-4xl sm:text-5xl font-display font-bold green-text mb-3">
-                {settings?.election_name ?? 'ESSA Elections'}
+                {settings?.election_name ?? 'NASSA Elections'}
               </h1>
-              <p className="max-w-lg text-sm sm:text-base" style={{ color: 'rgba(245,240,232,0.55)' }}>
+              <p className="max-w-lg text-sm sm:text-base" style={{ color: 'rgba(255,255,255,0.55)' }}>
                 {settings?.school_name ?? 'Student Elections Portal'}
               </p>
             </div>
@@ -157,8 +158,8 @@ export default function VerifyOtpPage() {
                 'You will move to the ballot after verification',
               ].map((item, index) => (
                 <div key={item} className="glass-card rounded-2xl p-4">
-                  <p className="text-xs mb-2" style={{ color: 'rgba(201,168,76,0.7)' }}>0{index + 1}</p>
-                  <p className="text-sm" style={{ color: 'rgba(245,240,232,0.8)' }}>{item}</p>
+                  <p className="text-xs mb-2" style={{ color: 'rgba(212,168,67,0.7)' }}>0{index + 1}</p>
+                  <p className="text-sm" style={{ color: 'rgba(255,255,255,0.8)' }}>{item}</p>
                 </div>
               ))}
             </div>
@@ -167,10 +168,10 @@ export default function VerifyOtpPage() {
 
         <div className="relative mx-auto w-full max-w-md">
           <div className="glass-card rounded-[32px] p-6 sm:p-8">
-            <h2 className="text-xl font-display font-semibold mb-2" style={{ color: '#F5F0E8' }}>
+            <h2 className="text-xl font-display font-semibold mb-2" style={{ color: '#FFFFFF' }}>
               Enter OTP Code
             </h2>
-            <p className="text-xs mb-6" style={{ color: 'rgba(245,240,232,0.45)' }}>
+            <p className="text-xs mb-6" style={{ color: 'rgba(255,255,255,0.45)' }}>
               A 6-digit code was sent to your registered email. It expires in 60 seconds.
             </p>
 
@@ -217,7 +218,7 @@ export default function VerifyOtpPage() {
                 onClick={handleResend}
                 disabled={resendCooldown > 0}
                 className="text-xs hover:underline text-left"
-                style={{ color: resendCooldown > 0 ? 'rgba(245,240,232,0.3)' : 'rgba(76,175,80,0.6)' }}>
+                style={{ color: resendCooldown > 0 ? 'rgba(255,255,255,0.3)' : 'rgba(76,175,80,0.6)' }}>
                 {resendCooldown > 0 ? (
                   <span className="flex items-center gap-1">
                     <Timer size={12} /> Resend in {resendCooldown}s
@@ -238,8 +239,8 @@ export default function VerifyOtpPage() {
             </a>
           </p>
 
-          <p className="text-center text-xs mt-8" style={{ color: 'rgba(245,240,232,0.25)' }}>
-            Powered by ESSA Voting System &bull; {new Date().getFullYear()}
+          <p className="text-center text-xs mt-8" style={{ color: 'rgba(255,255,255,0.25)' }}>
+            Powered by NASSA Voting System &bull; {new Date().getFullYear()}
           </p>
         </div>
       </div>

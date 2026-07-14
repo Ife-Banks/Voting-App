@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     // Atomic optimistic lock: only one request can set has_voted = true
     const { data: locked, error: lockError } = await supabase
       .from('students')
-      .update({ has_voted: true })
+      .update({ has_voted: true, voted_from_ip: ip })
       .eq('email', email)
       .eq('has_voted', false)
       .select('id')

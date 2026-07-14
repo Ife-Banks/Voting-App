@@ -1,5 +1,5 @@
 -- ============================================================
--- SRC VOTING APP — FULL SETUP (ESSA Branch)
+-- NASSA VOTING APP — FULL SETUP (NASSA Branch)
 -- Run this entire file in your Supabase SQL Editor
 -- ============================================================
 
@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS students (
   email TEXT UNIQUE NOT NULL,
   matric_number TEXT UNIQUE,
   has_voted BOOLEAN DEFAULT FALSE,
+  voted_from_ip TEXT,
   otp_code TEXT,
   otp_expires_at TIMESTAMPTZ,
   otp_attempts INT DEFAULT 0,
@@ -58,13 +59,21 @@ CREATE TABLE IF NOT EXISTS settings (
   id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   voting_open BOOLEAN DEFAULT FALSE,
   results_public BOOLEAN DEFAULT FALSE,
+  otp_enabled BOOLEAN DEFAULT TRUE,
   election_name TEXT DEFAULT 'SRC Elections',
   school_name TEXT DEFAULT 'Our School',
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-INSERT INTO settings (id, voting_open, results_public, election_name, school_name)
-VALUES (1, FALSE, FALSE, 'SRC Elections 2025/2026', 'Abiola Ajimobi Technical University')
+------------------------------------------------------
+-- 2. ALTER EXISTING TABLES (safe to re-run)
+------------------------------------------------------
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS results_public BOOLEAN DEFAULT FALSE;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS otp_enabled BOOLEAN DEFAULT TRUE;
+ALTER TABLE students ADD COLUMN IF NOT EXISTS voted_from_ip TEXT;
+
+INSERT INTO settings (id, voting_open, results_public, otp_enabled, election_name, school_name)
+VALUES (1, FALSE, FALSE, TRUE, 'NASSA Executive Elections 2025/2026', 'Abiola Ajimobi Technical University')
 ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS admin_profiles (
@@ -77,11 +86,6 @@ CREATE TABLE IF NOT EXISTS admin_profiles (
   created_by TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
-------------------------------------------------------
--- 2. ALTER EXISTING TABLES (safe to re-run)
-------------------------------------------------------
-ALTER TABLE settings ADD COLUMN IF NOT EXISTS results_public BOOLEAN DEFAULT FALSE;
 
 ------------------------------------------------------
 -- 3. DROP ALL EXISTING POLICIES (safe re-run)

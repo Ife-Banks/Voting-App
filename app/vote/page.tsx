@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import type { Position, VoteSelection } from '@/lib/types'
 import { CheckCircle2, ChevronRight, ChevronLeft, LogOut, AlertCircle, Loader2, User, Trophy } from 'lucide-react'
 import Image from 'next/image'
+import ResultsBoard from '@/components/ResultsBoard'
 
 export default function VotePage() {
   const [positions, setPositions] = useState<Position[]>([])
@@ -18,7 +19,7 @@ export default function VotePage() {
   const [userEmail, setUserEmail] = useState('')
   const [votingOpen, setVotingOpen] = useState(true)
   const [resultsPublic, setResultsPublic] = useState(false)
-  const [electionName, setElectionName] = useState('SRC Elections')
+  const [electionName, setElectionName] = useState('NASSA Executive Elections')
   const [alreadyVoted, setAlreadyVoted] = useState(false)
   const router = useRouter()
 
@@ -94,6 +95,28 @@ export default function VotePage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!submitted) return
+    const supabase = createClient()
+
+    supabase.from('positions').select('*, candidates(*)').order('display_order')
+      .then(({ data }) => { if (data) setPositions(data) })
+
+    const channel = supabase
+      .channel('live-results')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'candidates' }, payload => {
+        setPositions(prev => prev.map(pos => ({
+          ...pos,
+          candidates: (pos.candidates ?? []).map(c =>
+            c.id === payload.new.id ? { ...c, vote_count: payload.new.vote_count } : c
+          )
+        })))
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [submitted])
+
   function selectCandidate(positionId: string, candidateId: string) {
     setSelections(prev => ({ ...prev, [positionId]: candidateId }))
   }
@@ -120,10 +143,6 @@ export default function VotePage() {
       if (!res.ok) throw new Error(result.error)
 
       setSubmitted(true)
-      setTimeout(async () => {
-        await fetch('/api/auth/logout', { method: 'POST' })
-        window.location.href = '/login'
-      }, 3000)
     } catch (err: any) {
       setError(err.message ?? 'Failed to submit votes. Please try again.')
     }
@@ -139,28 +158,59 @@ export default function VotePage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin" style={{ color: '#C9A84C' }} />
+        <Loader2 size={32} className="animate-spin" style={{ color: '#4CAF50' }} />
       </div>
     )
   }
 
-  if (alreadyVoted || submitted) {
+  if (submitted) {
+    return (
+      <div className="page-shell min-h-screen px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="glass-card rounded-2xl p-6 mb-8 text-center"
+            style={{ background: 'rgba(212,168,67,0.08)', border: '1px solid rgba(212,168,67,0.25)' }}>
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4"
+              style={{ background: 'linear-gradient(135deg, #1A1A2E, #2A2A3E)', border: '2px solid #4CAF50' }}>
+              <CheckCircle2 size={40} style={{ color: '#4CAF50' }} />
+            </div>
+            <h1 className="text-3xl font-display font-bold gold-text mb-2">
+              Vote Submitted!
+            </h1>
+            <p className="text-sm mb-1" style={{ color: 'rgba(255,255,255,0.7)' }}>
+              Your vote has been recorded. Results update in real time below.
+            </p>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              Thank you for participating in the {electionName}.
+            </p>
+          </div>
+
+          <ResultsBoard positions={positions} />
+
+          <div className="mt-8 text-center">
+            <button onClick={handleLogout} className="btn-ghost px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto">
+              <LogOut size={16} /> Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (alreadyVoted) {
     return (
       <div className="page-shell min-h-screen flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="inline-flex items-center justify-center w-24 h-24 rounded-full mb-8"
-            style={{ background: 'linear-gradient(135deg, #1A4A3A, #2D6B54)', border: '2px solid #C9A84C' }}>
-            <CheckCircle2 size={48} style={{ color: '#C9A84C' }} />
+            style={{ background: 'linear-gradient(135deg, #1A1A2E, #2A2A3E)', border: '2px solid #4CAF50' }}>
+            <CheckCircle2 size={48} style={{ color: '#4CAF50' }} />
           </div>
           <h1 className="text-4xl font-display font-bold gold-text mb-4">
-            {submitted ? 'Vote Submitted!' : 'Already Voted'}
+            Already Voted
           </h1>
-          <p className="text-lg mb-2" style={{ color: 'rgba(245,240,232,0.7)' }}>
-            {submitted
-              ? 'Your votes have been recorded successfully.'
-              : 'You have already cast your vote in this election.'}
+          <p className="text-lg mb-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            You have already cast your vote in this election.
           </p>
-          <p className="text-sm mb-8" style={{ color: 'rgba(245,240,232,0.4)' }}>
+          <p className="text-sm mb-8" style={{ color: 'rgba(255,255,255,0.4)' }}>
             Thank you for participating in the {electionName}.
           </p>
           <button onClick={handleLogout} className="btn-ghost px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto">
@@ -177,13 +227,13 @@ export default function VotePage() {
         <div className="page-shell min-h-screen flex items-center justify-center px-4">
           <div className="text-center max-w-md">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6"
-              style={{ background: 'rgba(61,138,108,0.1)', border: '1px solid rgba(61,138,108,0.2)' }}>
-              <Trophy size={36} style={{ color: '#C9A84C' }} />
+              style={{ background: 'rgba(58,58,80,0.1)', border: '1px solid rgba(58,58,80,0.2)' }}>
+              <Trophy size={36} style={{ color: '#4CAF50' }} />
             </div>
-            <h1 className="text-3xl font-display font-bold mb-4" style={{ color: '#F5F0E8' }}>
+            <h1 className="text-3xl font-display font-bold mb-4" style={{ color: '#FFFFFF' }}>
               Voting Has Ended
             </h1>
-            <p style={{ color: 'rgba(245,240,232,0.5)' }} className="mb-6">
+            <p style={{ color: 'rgba(255,255,255,0.5)' }} className="mb-6">
               Results are now available. Click below to view.
             </p>
             <a href="/results" className="btn-gold px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto w-fit">
@@ -201,13 +251,13 @@ export default function VotePage() {
       <div className="page-shell min-h-screen flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6"
-            style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)' }}>
-            <AlertCircle size={36} style={{ color: '#C9A84C' }} />
+            style={{ background: 'rgba(212,168,67,0.1)', border: '1px solid rgba(212,168,67,0.2)' }}>
+            <AlertCircle size={36} style={{ color: '#4CAF50' }} />
           </div>
-          <h1 className="text-3xl font-display font-bold mb-4" style={{ color: '#F5F0E8' }}>
+          <h1 className="text-3xl font-display font-bold mb-4" style={{ color: '#FFFFFF' }}>
             Results Not Out Yet
           </h1>
-          <p style={{ color: 'rgba(245,240,232,0.5)' }} className="mb-6">
+          <p style={{ color: 'rgba(255,255,255,0.5)' }} className="mb-6">
             Voting has closed. Results will be announced soon.
           </p>
           <button onClick={handleLogout} className="btn-ghost px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto">
@@ -226,7 +276,7 @@ export default function VotePage() {
   return (
     <div className="page-shell min-h-screen flex flex-col">
       <header className="sticky top-0 z-30 border-b"
-        style={{ borderColor: 'rgba(201,168,76,0.15)', background: 'rgba(10,10,15,0.82)', backdropFilter: 'blur(18px)' }}>
+        style={{ borderColor: 'rgba(212,168,67,0.15)', background: 'rgba(10,10,15,0.82)', backdropFilter: 'blur(18px)' }}>
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative w-10 h-10 shrink-0">
@@ -234,7 +284,7 @@ export default function VotePage() {
             </div>
             <div className="min-w-0">
               <h1 className="font-display text-xl font-semibold green-text truncate">{electionName}</h1>
-              <p className="text-xs truncate" style={{ color: 'rgba(245,240,232,0.4)' }}>{userEmail}</p>
+              <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>{userEmail}</p>
             </div>
           </div>
           <button onClick={handleLogout} className="btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-2 w-full sm:w-auto">
@@ -245,20 +295,20 @@ export default function VotePage() {
 
       <div className="flex-1 mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <div className="glass-card mb-6 p-4 rounded-2xl flex items-start gap-3"
-          style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)' }}>
-          <AlertCircle size={18} style={{ color: '#C9A84C', marginTop: 2 }} />
-          <p className="text-xs leading-relaxed" style={{ color: 'rgba(245,240,232,0.7)' }}>
-            <strong style={{ color: '#C9A84C' }}>One-time access:</strong> Do not log out until you have voted.
+          style={{ background: 'rgba(212,168,67,0.08)', border: '1px solid rgba(212,168,67,0.25)' }}>
+          <AlertCircle size={18} style={{ color: '#4CAF50', marginTop: 2 }} />
+          <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            <strong style={{ color: '#4CAF50' }}>One-time access:</strong> Do not log out until you have voted.
             If you leave or refresh this page before submitting, you will not be able to re-enter.
           </p>
         </div>
 
         <div className="mb-10">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium" style={{ color: 'rgba(245,240,232,0.6)' }}>
+            <span className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>
               Position {currentStep + 1} of {totalSteps}
             </span>
-            <span className="text-sm" style={{ color: '#C9A84C' }}>
+            <span className="text-sm" style={{ color: '#4CAF50' }}>
               {Object.keys(selections).length}/{totalSteps} selected
             </span>
           </div>
@@ -270,12 +320,12 @@ export default function VotePage() {
                 className="step-dot flex-1 h-1.5 rounded-full cursor-pointer"
                 style={{
                   background: i < currentStep
-                    ? '#3D8A6C'
+                    ? '#3A3A50'
                     : i === currentStep
-                      ? '#C9A84C'
+                      ? '#4CAF50'
                       : selections[pos.id]
-                        ? '#2D6B54'
-                        : 'rgba(201,168,76,0.15)',
+                        ? '#2A2A3E'
+                        : 'rgba(212,168,67,0.15)',
                   maxWidth: '100%',
                   height: '4px',
                   borderRadius: '2px',
@@ -288,15 +338,15 @@ export default function VotePage() {
         {currentPosition && (
           <div className="animate-fade-up">
             <div className="mb-8">
-              <h2 className="text-3xl font-display font-bold mb-2" style={{ color: '#F5F0E8' }}>
+              <h2 className="text-3xl font-display font-bold mb-2" style={{ color: '#FFFFFF' }}>
                 {currentPosition.title}
               </h2>
               {currentPosition.description && (
-                <p className="text-sm" style={{ color: 'rgba(245,240,232,0.5)' }}>
+                <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
                   {currentPosition.description}
                 </p>
               )}
-              <p className="text-xs mt-2" style={{ color: 'rgba(201,168,76,0.7)' }}>
+              <p className="text-xs mt-2" style={{ color: 'rgba(212,168,67,0.7)' }}>
                 Select one candidate below
               </p>
             </div>
@@ -311,7 +361,7 @@ export default function VotePage() {
                     className={`candidate-card glass-card rounded-2xl overflow-hidden ${isSelected ? 'selected' : ''}`}
                     onClick={() => selectCandidate(currentPosition.id, candidate.id)}
                   >
-                    <div className="h-48 relative overflow-hidden bg-[#1A4A3A]">
+                    <div className="h-48 relative overflow-hidden bg-[#1A1A2E]">
                       {candidate.photo_url ? (
                         <>
                           <img
@@ -331,28 +381,28 @@ export default function VotePage() {
                         </>
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <User size={64} className="opacity-30" style={{ color: '#C9A84C' }} />
+                          <User size={64} className="opacity-30" style={{ color: '#D4A843' }} />
                         </div>
                       )}
                       {isSelected && (
                         <div
                           className="absolute inset-0 flex items-end p-4 pointer-events-none"
-                          style={{ background: 'linear-gradient(to top, rgba(201,168,76,0.3), transparent)' }}
+                          style={{ background: 'linear-gradient(to top, rgba(212,168,67,0.3), transparent)' }}
                         />
                       )}
                     </div>
 
                     <div className="p-4">
-                      <h3 className="font-display text-lg font-semibold mb-1" style={{ color: '#F5F0E8' }}>
+                      <h3 className="font-display text-lg font-semibold mb-1" style={{ color: '#FFFFFF' }}>
                         {candidate.full_name}
                       </h3>
                       {candidate.class && (
-                        <p className="text-xs mb-2" style={{ color: '#C9A84C' }}>
+                        <p className="text-xs mb-2" style={{ color: '#4CAF50' }}>
                           {candidate.class}
                         </p>
                       )}
                       {candidate.manifesto && (
-                        <p className="text-xs leading-relaxed" style={{ color: 'rgba(245,240,232,0.5)' }}>
+                        <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
                           {candidate.manifesto.length > 120
                             ? `${candidate.manifesto.slice(0, 120)}...`
                             : candidate.manifesto}
@@ -392,7 +442,7 @@ export default function VotePage() {
                   : <><CheckCircle2 size={16} /> Submit All Votes</>}
               </button>
               {!allVoted && (
-                <p className="text-xs" style={{ color: 'rgba(201,168,76,0.6)' }}>
+                <p className="text-xs" style={{ color: 'rgba(76,175,80,0.6)' }}>
                   Please vote for all positions before submitting
                 </p>
               )}
