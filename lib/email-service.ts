@@ -78,11 +78,13 @@ async function sendViaMailjet(to: string, subject: string, html: string, text: s
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      From: { Email: senderEmail, Name: senderName },
-      To: [{ Email: to }],
-      Subject: subject,
-      HTMLPart: html,
-      TextPart: text,
+      Messages: [{
+        From: { Email: senderEmail, Name: senderName },
+        To: [{ Email: to }],
+        Subject: subject,
+        HTMLPart: html,
+        TextPart: text,
+      }],
     }),
   })
 
