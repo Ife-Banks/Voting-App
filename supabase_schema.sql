@@ -65,6 +65,17 @@ CREATE TABLE IF NOT EXISTS settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS email_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  recipient TEXT NOT NULL,
+  purpose TEXT NOT NULL,
+  provider TEXT,
+  success BOOLEAN NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE email_log ENABLE ROW LEVEL SECURITY;
+
 ------------------------------------------------------
 -- 2. ALTER EXISTING TABLES (safe to re-run)
 ------------------------------------------------------

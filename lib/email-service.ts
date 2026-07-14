@@ -1,4 +1,5 @@
 import { logError } from '@/lib/logger'
+import { createAdminClient } from '@/lib/supabase-server'
 
 const OTP_EXPIRY_SECONDS = 60
 
@@ -143,9 +144,9 @@ function inviteText(name: string, setupLink: string): string {
 type EmailProvider = 'resend' | 'brevo' | 'mailjet' | null
 
 export async function sendEmail(params: {
-  to: string; subject: string; html: string; text: string
+  to: string; subject: string; html: string; text: string; purpose?: 'otp' | 'admin_invite' | 'test'
 }): Promise<{ success: boolean; provider: EmailProvider }> {
-  const { to, subject, html, text } = params
+  const { to, subject, html, text, purpose = 'otp' } = params
 
   const providers: { name: EmailProvider; fn: () => Promise<boolean> }[] = [
     { name: 'resend',  fn: () => sendViaResend(to, subject, html, text) },
@@ -158,6 +159,7 @@ export async function sendEmail(params: {
       const ok = await p.fn()
       if (ok) {
         console.log(`[email-service] Sent via ${p.name}`)
+        await logEmailAttempt(to, purpose, p.name, true)
         return { success: true, provider: p.name }
       }
     } catch (err) {
@@ -166,7 +168,17 @@ export async function sendEmail(params: {
   }
 
   logError('email-service', 'send', 'All 3 email providers failed')
+  await logEmailAttempt(to, purpose, null, false)
   return { success: false, provider: null }
+}
+
+async function logEmailAttempt(recipient: string, purpose: string, provider: EmailProvider, success: boolean) {
+  try {
+    const supabase = createAdminClient()
+    await supabase.from('email_log').insert({ recipient, purpose, provider, success })
+  } catch (err) {
+    logError('email-service', 'log-attempt', err instanceof Error ? err.message : String(err))
+  }
 }
 
 export async function sendOtpEmail(to: string, otp: string): Promise<boolean> {
@@ -175,6 +187,7 @@ export async function sendOtpEmail(to: string, otp: string): Promise<boolean> {
     subject: 'Your NASSA Voting OTP Code',
     html: otpHtml(otp),
     text: otpText(otp),
+    purpose: 'otp',
   })
   return success
 }
@@ -185,6 +198,7 @@ export async function sendAdminInviteEmail(to: string, name: string, setupLink: 
     subject: 'You have been invited as an Admin - NASSA Voting',
     html: inviteHtml(name, setupLink),
     text: inviteText(name, setupLink),
+    purpose: 'admin_invite',
   })
   return success
 }
