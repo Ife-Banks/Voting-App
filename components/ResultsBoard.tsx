@@ -81,9 +81,9 @@ export default function ResultsBoard({ positions }: ResultsBoardProps) {
                             {candidate.full_name}
                           </p>
                           {isWinner && <Trophy size={12} style={{ color: '#4CAF50' }} />}
-                          {candidate.class && (
+                          {candidate.bio && (
                             <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                              {candidate.class}
+                              {candidate.bio}
                             </span>
                           )}
                         </div>

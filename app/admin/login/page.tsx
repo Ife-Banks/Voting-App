@@ -108,9 +108,9 @@ export default function AdminLoginPage() {
           </form>
 
           <p className="text-center mt-6">
-            <a href="/login" className="text-xs hover:underline"
+            <a href="/awards" className="text-xs hover:underline"
               style={{ color: 'rgba(76,175,80,0.6)' }}>
-              <ArrowLeft size={12} className="inline mr-1" />Back to student sign in
+              <ArrowLeft size={12} className="inline mr-1" />Back to voting
             </a>
           </p>
         </div>

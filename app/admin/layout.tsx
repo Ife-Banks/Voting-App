@@ -8,20 +8,19 @@ import { createClient } from '@/lib/supabase'
 import { AdminContext } from '@/lib/admin-context'
 import type { AdminProfile } from '@/lib/types'
 import {
-  LayoutDashboard, Users, Award, BarChart2,
-  LogOut, Vote, ChevronRight, Calendar, Menu, X, Shield
+  LayoutDashboard, Award, BarChart2,
+  LogOut, ChevronRight, Menu, X, Shield, DollarSign
 } from 'lucide-react'
 
 const baseNavItems = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/admin/sessions', icon: Calendar, label: 'Sessions' },
   { href: '/admin/positions', icon: Award, label: 'Positions & Candidates' },
-  { href: '/admin/students', icon: Users, label: 'Students' },
+  { href: '/admin/payments', icon: DollarSign, label: 'Payments' },
   { href: '/admin/results', icon: BarChart2, label: 'Results' },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const [electionName, setElectionName] = useState('SRC Elections')
+  const [awardName, setAwardName] = useState('NASSA Student Choice Award')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null)
@@ -36,15 +35,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (isLoginPage || isSetupPage) return
     async function check() {
       try {
-        // Use the API route for profile (uses service role key, bypasses RLS)
         const profileRes = await fetch('/api/admin/profile')
         if (!profileRes.ok) { router.push('/admin/login'); return }
         const profileData = await profileRes.json()
         if (!profileData?.profile) { router.push('/admin/login'); return }
         setAdminProfile(profileData.profile)
 
-        const { data: settingsData } = await supabase.from('settings').select('election_name').single()
-        if (settingsData) setElectionName(settingsData.election_name)
+        const { data: settingsData } = await supabase.from('settings').select('award_name').single()
+        if (settingsData) setAwardName(settingsData.award_name)
       } catch {
         router.push('/admin/login')
       } finally {
@@ -58,13 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setSidebarOpen(false)
   }, [pathname])
 
-  // Build nav items based on role/permissions
-  const navItems = baseNavItems.filter(item => {
-    if (item.href === '/admin/students' || item.href === '/admin/sessions') {
-      return adminProfile?.role === 'super_admin'
-    }
-    return true
-  })
+  const navItems = [...baseNavItems]
 
   if (adminProfile?.role === 'super_admin') {
     navItems.push({ href: '/admin/admins', icon: Shield, label: 'Admins' })
@@ -73,11 +65,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   async function logout() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/login')
+    router.push('/admin/login')
   }
 
-  // Redirect non-super-admins away from restricted pages
-  const restrictedPaths = ['/admin/students', '/admin/sessions', '/admin/admins']
+  const restrictedPaths = ['/admin/admins']
   if (adminProfile && adminProfile.role !== 'super_admin' && restrictedPaths.some(p => pathname.startsWith(p))) {
     router.push('/admin/dashboard')
     return null
@@ -102,7 +93,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
         {!sidebarCollapsed && (
           <div className="overflow-hidden">
-            <p className="text-xs font-semibold gold-text leading-tight truncate">{electionName}</p>
+            <p className="text-xs font-semibold gold-text leading-tight truncate">{awardName}</p>
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Admin Panel</p>
           </div>
         )}
@@ -136,14 +127,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen flex lg:gap-4 lg:p-4">
-      {/* Mobile backdrop */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 lg:hidden"
           style={{ background: 'rgba(0,0,0,0.6)' }}
           onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Mobile sidebar (overlay) */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 flex flex-col transition-transform duration-300 lg:hidden ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ background: 'rgba(10,10,15,0.98)', borderRight: '1px solid rgba(212,168,67,0.12)' }}>
         <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: 'rgba(212,168,67,0.12)' }}>
@@ -153,7 +142,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Image src="/image.png" alt="Logo" fill className="object-contain rounded-xl" />
             </div>
             <div>
-              <p className="text-xs font-semibold gold-text leading-tight">{electionName}</p>
+              <p className="text-xs font-semibold gold-text leading-tight">{awardName}</p>
               <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Admin Panel</p>
             </div>
           </div>
@@ -184,7 +173,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* Desktop sidebar */}
       <aside className={`hidden lg:flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'} shrink-0 border-r`}
         style={{
           borderColor: 'rgba(212,168,67,0.12)',
@@ -194,10 +182,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {sidebarContent}
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-auto lg:rounded-[28px] lg:border lg:border-[rgba(212,168,67,0.12)] lg:shadow-[0_18px_48px_rgba(0,0,0,0.26)]"
         style={{ background: 'rgba(10,10,15,0.55)', backdropFilter: 'blur(18px)' }}>
-        {/* Top bar with mobile menu + collapse buttons */}
         <div className="sticky top-0 z-30 flex items-center gap-3 px-4 lg:px-6 py-3 border-b lg:hidden"
           style={{ borderColor: 'rgba(212,168,67,0.12)', background: 'rgba(10,10,15,0.95)', backdropFilter: 'blur(12px)' }}>
           <button onClick={() => setSidebarOpen(true)}
@@ -208,11 +194,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="relative w-7 h-7 shrink-0">
               <Image src="/image.png" alt="Logo" fill className="object-contain rounded-lg" />
             </div>
-            <p className="text-sm font-semibold gold-text truncate">{electionName}</p>
+            <p className="text-sm font-semibold gold-text truncate">{awardName}</p>
           </div>
         </div>
 
-        {/* Desktop collapse toggle */}
         <div className="hidden lg:block">
           <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="fixed left-[13px] bottom-6 z-30 p-1.5 rounded-lg transition-opacity hover:bg-white/5"

@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
-import { getSessionFromCookie } from '@/lib/session'
 
 const isProduction = process.env.NODE_ENV === 'production'
 
@@ -10,12 +9,12 @@ function buildCSP(): string {
   const host = url ? new URL(url).host : '*.supabase.co'
   return [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live`,
-    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-    `img-src 'self' data: blob: https://${host}`,
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://js.paystack.co`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://paystack.com`,
+    `img-src 'self' data: blob: https://${host} https://checkout.paystack.com`,
     `font-src 'self' data: https://fonts.gstatic.com`,
-    `connect-src 'self' https://${host} wss://${host} https://vercel.live`,
-    `frame-src 'self' https://vercel.live`,
+    `connect-src 'self' https://${host} wss://${host} https://vercel.live https://api.paystack.co`,
+    `frame-src 'self' https://vercel.live https://checkout.paystack.com`,
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
@@ -39,27 +38,12 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   // Public paths — always allow
-  if (path.startsWith('/login') || path.startsWith('/verify-otp') || path.startsWith('/admin/login') || path.startsWith('/admin/setup') || path.startsWith('/api') || path.startsWith('/_next')) {
+  if (path.startsWith('/admin/login') || path.startsWith('/admin/setup') || path.startsWith('/api') || path.startsWith('/_next')) {
     return addSecurityHeaders(NextResponse.next())
   }
 
-  // 1. Check custom student session cookie first
-  let studentSession = null
-  try {
-    studentSession = await getSessionFromCookie(request.headers.get('cookie'))
-  } catch {
-    // Session check failed — treat as logged out
-  }
-  if (studentSession) {
-    // Student is logged in — block admin routes
-    if (path.startsWith('/admin')) {
-      return addSecurityHeaders(NextResponse.redirect(new URL('/vote', request.url)))
-    }
-    return addSecurityHeaders(NextResponse.next())
-  }
-
-  // 2. Only need Supabase Auth for admin pages (or vote page for admin redirect)
-  if (path.startsWith('/admin') || path.startsWith('/vote')) {
+  // Only need Supabase Auth for admin pages
+  if (path.startsWith('/admin')) {
     let supabaseResponse = NextResponse.next({ request })
 
     const supabase = createServerClient(
@@ -82,13 +66,13 @@ export async function middleware(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return addSecurityHeaders(NextResponse.redirect(new URL('/login', request.url)))
+      return addSecurityHeaders(NextResponse.redirect(new URL('/admin/login', request.url)))
     }
 
     const userEmail = user.email ?? ''
     const isConfiguredAdmin = userEmail === process.env.NEXT_PUBLIC_ADMIN_EMAIL
 
-    // Check if user is an admin (via admin_profiles, bypasses RLS)
+    // Check if user is an admin (via admin_profiles)
     let userIsAdmin = isConfiguredAdmin
     if (!userIsAdmin) {
       try {
@@ -106,19 +90,14 @@ export async function middleware(request: NextRequest) {
       } catch {}
     }
 
-    // Admin on vote page → redirect to dashboard
-    if (path.startsWith('/vote') && userIsAdmin) {
-      return addSecurityHeaders(NextResponse.redirect(new URL('/admin/dashboard', request.url)))
-    }
-
-    // Non-admin on admin page → redirect to vote
-    if (path.startsWith('/admin') && !userIsAdmin) {
-      return addSecurityHeaders(NextResponse.redirect(new URL('/vote', request.url)))
+    if (!userIsAdmin) {
+      return addSecurityHeaders(NextResponse.redirect(new URL('/', request.url)))
     }
 
     return addSecurityHeaders(supabaseResponse)
   }
 
+  // All public pages pass through
   return addSecurityHeaders(NextResponse.next())
 }
 

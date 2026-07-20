@@ -1,18 +1,7 @@
-export interface Student {
-  id: string
-  email: string
-  matric_number: string | null
-  has_voted: boolean
-  voted_from_ip: string | null
-  otp_code: string | null
-  otp_expires_at: string | null
-  otp_attempts: number | null
-  created_at: string
-}
-
 export interface Position {
   id: string
   title: string
+  slug: string
   description: string | null
   display_order: number
   created_at: string
@@ -23,41 +12,36 @@ export interface Candidate {
   id: string
   position_id: string
   full_name: string
-  class: string | null
-  manifesto: string | null
   photo_url: string | null
+  bio: string | null
   vote_count: number
   created_at: string
 }
 
-export interface Vote {
+export interface Payment {
   id: string
-  student_email: string
-  position_id: string
   candidate_id: string
+  position_id: string
+  voter_name: string
+  voter_email: string
+  quantity: number
+  price_per_vote_kobo: number
+  amount_kobo: number
+  paystack_reference: string
+  status: 'pending' | 'success' | 'failed'
   created_at: string
+  verified_at: string | null
+  candidate?: Candidate
+  position?: Position
 }
 
 export interface Settings {
   id: number
-  voting_open: boolean
-  results_public: boolean
-  otp_enabled: boolean
-  election_name: string
+  award_open: boolean
+  price_per_vote_kobo: number
+  award_name: string
   school_name: string
   updated_at: string
-}
-
-export interface VoteSelection {
-  [positionId: string]: string // positionId -> candidateId
-}
-
-export interface VotingSession {
-  id: string
-  title: string
-  is_active: boolean
-  created_at: string
-  ended_at: string | null
 }
 
 export interface AdminPermissions {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { createAdminClient, createAuthAdminClient } from '@/lib/supabase-server'
 import { createInviteToken } from '@/lib/invite'
 import { sendAdminInviteEmail } from '@/lib/email-service'
@@ -123,24 +123,35 @@ export async function POST(req: NextRequest) {
 
 async function getCallerEmail(req: NextRequest): Promise<string | null> {
   try {
-    const supabase = createServerClient(
+    const cookies = req.cookies.getAll()
+    const projectRef = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https:\/\/(.+)\.supabase\.co/)?.[1]
+    const prefix = projectRef ? `sb-${projectRef}-auth-token` : '-auth-token'
+    const authCookie = cookies.find(c => c.name === prefix || c.name.includes(prefix))
+    if (!authCookie) return null
+    const raw = authCookie.value
+    let accessToken: string | null = null
+    try {
+      const base64 = raw.startsWith('base64-') ? raw.slice(7) : raw
+      const json = JSON.parse(Buffer.from(base64, 'base64url').toString('utf-8'))
+      const session = json?.session ?? json
+      if (session?.access_token) accessToken = session.access_token
+    } catch {}
+    if (!accessToken) {
+      try {
+        const json = JSON.parse(raw)
+        const session = json?.session ?? json
+        if (session?.access_token) accessToken = session.access_token
+      } catch {}
+    }
+    if (!accessToken && raw.split('.').length === 3) accessToken = raw
+    if (!accessToken) return null
+
+    const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            const cookie = req.headers.get('cookie') ?? ''
-            if (!cookie) return []
-            return cookie.split(';').map(pair => {
-              const [name, ...rest] = pair.trim().split('=')
-              return { name, value: rest.join('=') }
-            })
-          },
-          setAll() {},
-        },
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser(accessToken)
     return user?.email ?? null
   } catch {
     return null

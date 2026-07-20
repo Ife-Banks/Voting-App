@@ -16,6 +16,7 @@ export default function PositionsPage() {
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [newPositionTitle, setNewPositionTitle] = useState('')
+  const [newPositionSlug, setNewPositionSlug] = useState('')
   const [newPositionDesc, setNewPositionDesc] = useState('')
   const [addingPosition, setAddingPosition] = useState(false)
   const [showNewPosition, setShowNewPosition] = useState(false)
@@ -33,8 +34,13 @@ export default function PositionsPage() {
     setLoading(false)
   }
 
+  function slugify(text: string) {
+    return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+  }
+
   async function addPosition() {
     if (!newPositionTitle.trim()) return
+    const slug = newPositionSlug.trim() || slugify(newPositionTitle)
     setAddingPosition(true)
     const res = await fetch('/api/admin/positions', {
       method: 'POST',
@@ -42,6 +48,7 @@ export default function PositionsPage() {
       body: JSON.stringify({
         action: 'add_position',
         title: newPositionTitle,
+        slug,
         description: newPositionDesc,
         display_order: positions.length,
       }),
@@ -49,7 +56,7 @@ export default function PositionsPage() {
     const { data } = await res.json()
     if (data) {
       setPositions(prev => [...prev, { ...data, candidates: [] }])
-      setNewPositionTitle(''); setNewPositionDesc(''); setShowNewPosition(false)
+      setNewPositionTitle(''); setNewPositionSlug(''); setNewPositionDesc(''); setShowNewPosition(false)
     }
     setAddingPosition(false)
   }
@@ -73,8 +80,7 @@ export default function PositionsPage() {
       return {
         position: parts[0] ?? '',
         full_name: parts[1] ?? '',
-        class: parts[2] ?? '',
-        manifesto: parts.slice(3).join(', '),
+        bio: parts.slice(2).join(', '),
       }
     }).filter(r => r.position && r.full_name)
   }
@@ -82,7 +88,7 @@ export default function PositionsPage() {
   async function handleBulkImport() {
     const rows = parseBulkText(bulkText)
     if (!rows.length) {
-      alert('No valid rows found. Use format: Position,Full Name,Class,Manifesto')
+      alert('No valid rows found. Use format: Position,Full Name,Bio')
       return
     }
     setBulkLoading(true)
@@ -98,12 +104,6 @@ export default function PositionsPage() {
       await load()
       setBulkText('')
       setShowBulk(false)
-      const counts = data.reduce((acc: Record<string, number>, p: any) => {
-        acc.positions = (acc.positions || 0) + 1
-        acc.candidates = (acc.candidates || 0) + (p.candidates?.length || 0)
-        return acc
-      }, {})
-      alert(`Imported ${data.length} position(s) with candidates`)
     }
     setBulkLoading(false)
   }
@@ -128,7 +128,7 @@ export default function PositionsPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold gold-text mb-1">Positions & Candidates</h1>
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            Manage election positions and add candidates
+            Manage award categories and add candidates
           </p>
         </div>
         <button onClick={() => setShowBulk(true)}
@@ -141,16 +141,21 @@ export default function PositionsPage() {
         </button>
       </div>
 
-      {/* New position form */}
       {showNewPosition && (
         <div className="glass-card rounded-2xl p-6 mb-6 animate-fade-up">
           <h3 className="font-display text-lg font-semibold mb-4" style={{ color: '#FFFFFF' }}>
             New Position
           </h3>
           <div className="space-y-4">
-            <input value={newPositionTitle} onChange={e => setNewPositionTitle(e.target.value)}
+            <input value={newPositionTitle} onChange={e => {
+              setNewPositionTitle(e.target.value)
+              if (!newPositionSlug) setNewPositionSlug(slugify(e.target.value))
+            }}
               className="input-field w-full px-4 py-3 rounded-xl text-sm"
-              placeholder="Position title (e.g. President, Vice President)" />
+              placeholder="Position title (e.g. Best Singer)" />
+            <input value={newPositionSlug} onChange={e => setNewPositionSlug(e.target.value)}
+              className="input-field w-full px-4 py-3 rounded-xl text-sm"
+              placeholder="URL slug (auto-generated)" />
             <textarea value={newPositionDesc} onChange={e => setNewPositionDesc(e.target.value)}
               className="input-field w-full px-4 py-3 rounded-xl text-sm resize-none"
               rows={2} placeholder="Brief description (optional)" />
@@ -178,14 +183,14 @@ export default function PositionsPage() {
               </button>
             </div>
             <p className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              Paste CSV with format: <strong>Position,Full Name,Class,Manifesto</strong>. The header row is optional.
+              Paste CSV with format: <strong>Position,Full Name,Bio</strong>. The header row is optional.
             </p>
             <textarea
               value={bulkText}
               onChange={e => setBulkText(e.target.value)}
               className="input-field w-full px-4 py-3 rounded-xl text-sm resize-none mb-4"
               rows={12}
-              placeholder={"President,John Doe,SS3A,My campaign promises\nVice President,Jane Smith,SS2B,Her vision"}
+              placeholder={"Best Singer,John Doe,A powerful vocalist\nBest Dancer,Jane Smith,Amazing choreographer"}
             />
             {bulkText.trim() && (
               <p className="text-xs mb-3" style={{ color: 'rgba(76,175,80,0.7)' }}>
@@ -206,7 +211,6 @@ export default function PositionsPage() {
         </div>
       )}
 
-      {/* Positions list */}
       <div className="space-y-4">
         {positions.length === 0 && (
           <div className="text-center py-16 glass-card rounded-2xl">
@@ -239,6 +243,7 @@ function PositionCard({
 }) {
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(position.title)
+  const [slug, setSlug] = useState(position.slug)
   const [desc, setDesc] = useState(position.description ?? '')
   const [showCandidateForm, setShowCandidateForm] = useState(false)
   const [editingCandidateId, setEditingCandidateId] = useState<string | null>(null)
@@ -247,9 +252,9 @@ function PositionCard({
     await fetch('/api/admin/positions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update_position', id: position.id, title, description: desc }),
+      body: JSON.stringify({ action: 'update_position', id: position.id, title, slug, description: desc }),
     })
-    onUpdatePosition({ title, description: desc })
+    onUpdatePosition({ title, slug, description: desc })
     setEditing(false)
   }
 
@@ -270,13 +275,13 @@ function PositionCard({
 
   return (
     <div className="glass-card rounded-2xl overflow-hidden">
-      {/* Header */}
       <div className="flex items-center gap-4 px-6 py-4 cursor-pointer" onClick={onToggle}>
         <GripVertical size={16} style={{ color: 'rgba(255,255,255,0.2)' }} />
         <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
           style={{ background: 'rgba(76,175,80,0.15)', color: '#4CAF50' }}>{idx + 1}</span>
         <div className="flex-1 min-w-0">
           <p className="font-display text-lg font-semibold" style={{ color: '#FFFFFF' }}>{position.title}</p>
+          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>/{position.slug}</p>
           {position.description && (
             <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>{position.description}</p>
           )}
@@ -300,12 +305,13 @@ function PositionCard({
         </div>
       </div>
 
-      {/* Edit form */}
       {editing && (
         <div className="px-6 pb-4 border-t" style={{ borderColor: 'rgba(212,168,67,0.1)' }}>
           <div className="pt-4 space-y-3">
             <input value={title} onChange={e => setTitle(e.target.value)}
               className="input-field w-full px-4 py-2.5 rounded-xl text-sm" />
+            <input value={slug} onChange={e => setSlug(e.target.value)}
+              className="input-field w-full px-4 py-2.5 rounded-xl text-sm" placeholder="URL slug" />
             <textarea value={desc} onChange={e => setDesc(e.target.value)}
               className="input-field w-full px-4 py-2.5 rounded-xl text-sm resize-none" rows={2} />
             <div className="flex gap-2">
@@ -316,7 +322,6 @@ function PositionCard({
         </div>
       )}
 
-      {/* Candidates panel */}
       {expanded && (
         <div className="border-t" style={{ borderColor: 'rgba(212,168,67,0.1)' }}>
           <div className="px-6 py-4">
@@ -368,8 +373,8 @@ function PositionCard({
                           <Edit2 size={12} />
                         </button>
                       </div>
-                      {candidate.class && (
-                        <p className="text-xs" style={{ color: '#4CAF50' }}>{candidate.class}</p>
+                      {candidate.bio && (
+                        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{candidate.bio}</p>
                       )}
                       <button onClick={() => deleteCandidate(candidate.id)}
                         className="mt-2 text-xs flex items-center gap-1 hover:text-red-400 transition-colors"
@@ -423,8 +428,7 @@ function CandidateForm({ positionId, candidate, onSave, onCancel }: {
 }) {
   const isEditing = !!candidate
   const [name, setName] = useState(candidate?.full_name ?? '')
-  const [cls, setCls] = useState(candidate?.class ?? '')
-  const [manifesto, setManifesto] = useState(candidate?.manifesto ?? '')
+  const [bio, setBio] = useState(candidate?.bio ?? '')
   const [photo, setPhoto] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(candidate?.photo_url ?? null)
   const [saving, setSaving] = useState(false)
@@ -484,7 +488,7 @@ function CandidateForm({ positionId, candidate, onSave, onCancel }: {
       const res = await fetch('/api/admin/positions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update_candidate', id: candidate!.id, full_name: name, class: cls, manifesto, photo_url }),
+        body: JSON.stringify({ action: 'update_candidate', id: candidate!.id, full_name: name, bio, photo_url }),
       })
       const { data } = await res.json()
       if (data) onSave(data)
@@ -492,7 +496,7 @@ function CandidateForm({ positionId, candidate, onSave, onCancel }: {
       const res = await fetch('/api/admin/positions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'add_candidate', position_id: positionId, full_name: name, class: cls, manifesto, photo_url }),
+        body: JSON.stringify({ action: 'add_candidate', position_id: positionId, full_name: name, bio, photo_url }),
       })
       const { data } = await res.json()
       if (data) onSave(data)
@@ -502,7 +506,6 @@ function CandidateForm({ positionId, candidate, onSave, onCancel }: {
 
   return (
     <>
-      {/* Crop dialog */}
       {cropSrc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.85)' }}>
@@ -540,17 +543,14 @@ function CandidateForm({ positionId, candidate, onSave, onCancel }: {
 
       <div className="emerald-card rounded-xl p-4 mb-4">
         <h5 className="text-sm font-semibold mb-3" style={{ color: '#FFFFFF' }}>{isEditing ? 'Edit Candidate' : 'New Candidate'}</h5>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-1 gap-3 mb-3">
           <input value={name} onChange={e => setName(e.target.value)}
             className="input-field px-3 py-2.5 rounded-lg text-sm" placeholder="Full Name *" />
-          <input value={cls} onChange={e => setCls(e.target.value)}
-            className="input-field px-3 py-2.5 rounded-lg text-sm" placeholder="Class / Year (e.g. SS3A)" />
         </div>
-        <textarea value={manifesto} onChange={e => setManifesto(e.target.value)}
+        <textarea value={bio} onChange={e => setBio(e.target.value)}
           className="input-field w-full px-3 py-2.5 rounded-lg text-sm resize-none mb-3"
-          rows={2} placeholder="Manifesto / Campaign statement (optional)" />
+          rows={2} placeholder="Bio / Description (optional)" />
 
-        {/* Photo upload */}
         <div className="flex items-center gap-3 mb-4">
           {preview ? (
             <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0">

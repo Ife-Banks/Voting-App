@@ -12,8 +12,7 @@ export default function ResultsPage() {
   const isSuperAdmin = profile?.role === 'super_admin'
   const [positions, setPositions] = useState<Position[]>([])
   const [loading, setLoading] = useState(true)
-  const [totalVoters, setTotalVoters] = useState(0)
-  const [totalVoted, setTotalVoted] = useState(0)
+  const [totalVotes, setTotalVotes] = useState(0)
   const [downloadingImage, setDownloadingImage] = useState(false)
   const resultsRef = useRef<HTMLDivElement>(null)
 
@@ -21,31 +20,29 @@ export default function ResultsPage() {
 
   async function load() {
     const supabase = createClient()
-    const [{ data: pos }, { data: students }] = await Promise.all([
-      supabase.from('positions').select('*, candidates(*) ').order('display_order'),
-      supabase.from('students').select('id, has_voted'),
-    ])
-    if (pos) setPositions(pos)
-    if (students) {
-      setTotalVoters(students.length)
-      setTotalVoted(students.filter(s => s.has_voted).length)
+    const { data: pos } = await supabase
+      .from('positions').select('*, candidates(*)').order('display_order')
+    if (pos) {
+      setPositions(pos)
+      const total = pos.reduce((sum: number, p: any) => sum + (p.candidates ?? []).reduce((s: number, c: any) => s + c.vote_count, 0), 0)
+      setTotalVotes(total)
     }
     setLoading(false)
   }
 
   function exportCSV() {
-    const rows: string[] = ['Position,Candidate,Class,Votes,Percentage']
+    const rows: string[] = ['Position,Candidate,Votes,Percentage']
     positions.forEach(pos => {
       const total = (pos.candidates ?? []).reduce((s, c) => s + c.vote_count, 0)
       ;(pos.candidates ?? []).sort((a, b) => b.vote_count - a.vote_count).forEach(c => {
         const pct = total > 0 ? ((c.vote_count / total) * 100).toFixed(1) : '0'
-        rows.push(`"${pos.title}","${c.full_name}","${c.class ?? ''}",${c.vote_count},${pct}%`)
+        rows.push(`"${pos.title}","${c.full_name}",${c.vote_count},${pct}%`)
       })
     })
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = 'election-results.csv'
+    a.download = 'award-results.csv'
     a.click()
   }
 
@@ -59,7 +56,7 @@ export default function ResultsPage() {
       })
       const a = document.createElement('a')
       a.href = dataUrl
-      a.download = 'election-results.png'
+      a.download = 'award-results.png'
       a.click()
     } catch (err) {
       console.error('Failed to generate image:', err)
@@ -79,9 +76,9 @@ export default function ResultsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-display font-bold gold-text mb-1">Election Results</h1>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold gold-text mb-1">Results</h1>
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            {totalVoted} of {totalVoters} students voted ({totalVoters > 0 ? Math.round((totalVoted / totalVoters) * 100) : 0}% turnout)
+            {totalVotes} total vote{totalVotes !== 1 ? 's' : ''} across all categories
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
@@ -104,7 +101,7 @@ export default function ResultsPage() {
       <div ref={resultsRef} className="space-y-6">
         {positions.map(position => {
           const candidates = [...(position.candidates ?? [])].sort((a, b) => b.vote_count - a.vote_count)
-          const totalVotes = candidates.reduce((s, c) => s + c.vote_count, 0)
+          const total = candidates.reduce((s, c) => s + c.vote_count, 0)
           const winner = candidates[0]
 
           return (
@@ -116,10 +113,10 @@ export default function ResultsPage() {
                     {position.title}
                   </h2>
                   <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                    {totalVotes} total votes
+                    {total} total votes
                   </p>
                 </div>
-                {winner && totalVotes > 0 && (
+                {winner && total > 0 && (
                   <div className="flex items-center gap-2 px-4 py-2 rounded-xl w-fit"
                     style={{ background: 'rgba(212,168,67,0.1)', border: '1px solid rgba(212,168,67,0.2)' }}>
                     <Trophy size={14} style={{ color: '#4CAF50' }} />
@@ -138,19 +135,15 @@ export default function ResultsPage() {
                 )}
 
                 {candidates.map((candidate, idx) => {
-                  const pct = totalVotes > 0 ? (candidate.vote_count / totalVotes) * 100 : 0
-                  const isWinner = idx === 0 && totalVotes > 0
+                  const pct = total > 0 ? (candidate.vote_count / total) * 100 : 0
+                  const isWinner = idx === 0 && total > 0
 
                   return (
                     <div key={candidate.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                       <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0"
                         style={{ background: 'linear-gradient(135deg, #1A1A2E, #0A1A0A)' }}>
                         {candidate.photo_url ? (
-                          <img
-                            src={candidate.photo_url}
-                            alt={candidate.full_name}
-                            className="w-full h-full object-cover object-top"
-                          />
+                          <img src={candidate.photo_url} alt={candidate.full_name} className="w-full h-full object-cover object-top" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <User size={20} style={{ color: 'rgba(212,168,67,0.3)' }} />
@@ -165,11 +158,6 @@ export default function ResultsPage() {
                               {candidate.full_name}
                             </p>
                             {isWinner && <Trophy size={12} style={{ color: '#4CAF50' }} />}
-                            {candidate.class && (
-                              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                                {candidate.class}
-                              </span>
-                            )}
                           </div>
                           <div className="flex items-center gap-3 shrink-0">
                             <span className="text-sm font-bold" style={{ color: isWinner ? '#4CAF50' : '#FFFFFF' }}>
@@ -180,17 +168,14 @@ export default function ResultsPage() {
                             </span>
                           </div>
                         </div>
-                        <div className="h-2 rounded-full overflow-hidden"
-                          style={{ background: 'rgba(212,168,67,0.08)' }}>
-                          <div
-                            className="h-full rounded-full transition-all duration-700"
+                        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(212,168,67,0.08)' }}>
+                          <div className="h-full rounded-full transition-all duration-700"
                             style={{
                               width: `${pct}%`,
                               background: isWinner
                                 ? 'linear-gradient(90deg, #2E7D32, #66BB6A)'
                                 : 'linear-gradient(90deg, #1A1A2E, #3A3A50)',
-                            }}
-                          />
+                            }} />
                         </div>
                       </div>
                     </div>
