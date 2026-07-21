@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { useSessionStorage } from '@/lib/use-session-storage'
 import type { Candidate, Settings } from '@/lib/types'
 import { Loader2, User, Minus, Plus, ArrowLeft, CheckCircle, XCircle, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
@@ -20,10 +21,10 @@ export default function VotePage() {
   const [loading, setLoading] = useState(true)
   const [votingOpen, setVotingOpen] = useState(true)
 
-  const [selectedCandidate, setSelectedCandidate] = useState<string | null>(null)
-  const [quantity, setQuantity] = useState(1)
-  const [voterName, setVoterName] = useState('')
-  const [voterEmail, setVoterEmail] = useState('')
+  const [selectedCandidate, setSelectedCandidate] = useSessionStorage<string | null>(`vote:${slug}:candidate`, null)
+  const [quantity, setQuantity] = useSessionStorage<number>(`vote:${slug}:quantity`, 1)
+  const [voterName, setVoterName] = useSessionStorage<string>(`vote:${slug}:name`, '')
+  const [voterEmail, setVoterEmail] = useSessionStorage<string>(`vote:${slug}:email`, '')
   const [processing, setProcessing] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
   const [paymentConfig, setPaymentConfig] = useState<{ reference: string; amount_kobo: number; channels: string[] } | null>(null)
@@ -86,6 +87,10 @@ export default function VotePage() {
           setVoterName('')
           setVoterEmail('')
           setSelectedCandidate(null)
+          sessionStorage.removeItem(`vote:${slug}:candidate`)
+          sessionStorage.removeItem(`vote:${slug}:quantity`)
+          sessionStorage.removeItem(`vote:${slug}:name`)
+          sessionStorage.removeItem(`vote:${slug}:email`)
         } else {
           setResult({ success: false, message: 'Payment verification failed. Vote will be counted via webhook.' })
         }
