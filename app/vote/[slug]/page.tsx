@@ -106,10 +106,8 @@ export default function VotePage() {
     if (!selectedCandidate || !voterName.trim() || !voterEmail.trim() || quantity < 1) return
     setProcessing(true)
     setResult(null)
-    console.log('[initiate] starting')
 
     try {
-      console.log('[initiate] calling POST /api/payments/initiate')
       const initRes = await fetch('/api/payments/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -120,7 +118,6 @@ export default function VotePage() {
           voter_email: voterEmail.trim(),
         }),
       })
-      console.log('[initiate] responded with status', initRes.status)
       const initData = await initRes.json()
       if (!initRes.ok) {
         setResult({ success: false, message: initData.error ?? 'Failed to initiate payment' })
@@ -128,11 +125,9 @@ export default function VotePage() {
         return
       }
 
-      console.log('[initiate] success, opening checkout:', { reference: initData.reference, amount_kobo: initData.amount_kobo })
       setPaymentConfig({ reference: initData.reference, amount_kobo: initData.amount_kobo })
-    } catch (err) {
-      console.error('[initiate] error:', err)
-      setResult({ success: false, message: `Something went wrong: ${err instanceof Error ? err.message : String(err)}` })
+    } catch {
+      setResult({ success: false, message: 'Something went wrong starting payment.' })
       setProcessing(false)
     }
   }
