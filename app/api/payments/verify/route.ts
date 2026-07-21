@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
     }
 
     const amountKobo = paystackData.data.amount
+    const channel = paystackData.data.channel as string | undefined
     const supabase = createAdminClient()
 
     // Atomic status transition - only succeeds if still 'pending'
@@ -66,7 +67,7 @@ export async function GET(req: NextRequest) {
       logError('payments', 'verify-increment', incrementError.message)
     }
 
-    return NextResponse.json({ payment, success: true })
+    return NextResponse.json({ payment, success: true, channel })
   } catch (err) {
     logError('payments', 'verify', err instanceof Error ? err.message : 'unknown')
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

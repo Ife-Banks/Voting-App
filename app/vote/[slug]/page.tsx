@@ -82,7 +82,11 @@ export default function VotePage() {
       .then(r => r.json())
       .then(verifyData => {
         if (verifyData.success || verifyData.already_processed) {
-          setResult({ success: true, message: `Vote cast successfully! You bought ${qty} vote${qty > 1 ? 's' : ''}.` })
+          const was = verifyData.channel
+          const isNonCard = was && was !== 'card'
+          setResult({ success: true, message: isNonCard
+            ? `Payment received — confirming with your bank, your ${qty} vote${qty > 1 ? 's' : ''} will appear shortly.`
+            : `Vote cast successfully! You bought ${qty} vote${qty > 1 ? 's' : ''}.` })
           setQuantity(1)
           setVoterName('')
           setVoterEmail('')
@@ -92,12 +96,12 @@ export default function VotePage() {
           sessionStorage.removeItem(`vote:${slug}:name`)
           sessionStorage.removeItem(`vote:${slug}:email`)
         } else {
-          setResult({ success: false, message: 'Payment verification failed. Vote will be counted via webhook.' })
+          setResult({ success: true, message: 'Payment received — vote will appear shortly.' })
         }
         setPaymentConfig(null)
       })
       .catch(() => {
-        setResult({ success: false, message: 'Payment verification failed. Vote will be counted via webhook.' })
+        setResult({ success: true, message: 'Payment received — vote will appear shortly.' })
         setPaymentConfig(null)
       })
   }
