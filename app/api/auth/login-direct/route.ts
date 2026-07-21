@@ -65,24 +65,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'You have already voted' }, { status: 401 })
     }
 
-    if (ip !== 'unknown') {
-      const { data: ipConflict } = await supabase
-        .from('students')
-        .select('id')
-        .eq('voted_from_ip', ip)
-        .neq('id', student.id)
-        .limit(1)
-        .maybeSingle()
-
-      if (ipConflict) {
-        logAuth('login-direct', normalizedMatric, `BLOCKED_IP_REUSE (ip: ${ip})`)
-        return NextResponse.json(
-          { error: 'This device or network has already been used to vote in this election. If this is a mistake, contact an election administrator.' },
-          { status: 403 }
-        )
-      }
-    }
-
     const exp = getCookieExpiry()
     const cookie = await createSessionCookie({
       email: student.email,
