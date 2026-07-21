@@ -373,6 +373,16 @@ body {
   background: #2E7D32;
 }
 
+/* Hide number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 @media (max-width: 640px) {
   .glass-card,
   .emerald-card {

@@ -169,8 +169,8 @@ export default function VotePage() {
               <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>{position.description}</p>
             )}
           </div>
-          <Link href="/leaderboard" className="ml-auto btn-ghost px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 shrink-0">
-            <TrendingUp size={12} /> Live Leaderboard
+          <Link href="/leaderboard" className="ml-auto btn-ghost px-3 sm:px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 shrink-0">
+            <TrendingUp size={12} /> <span className="hidden sm:inline">Live Leaderboard</span>
           </Link>
         </div>
       </header>
@@ -198,33 +198,33 @@ export default function VotePage() {
               <div key={candidate.id}
                 className={`glass-card rounded-2xl overflow-hidden transition-all ${isSelected ? 'ring-2 ring-[#4CAF50]' : ''} ${votingOpen ? 'cursor-pointer hover:bg-white/5' : ''}`}
                 onClick={() => { if (votingOpen) setSelectedCandidate(candidate.id) }}>
-                <div className="flex items-start gap-4 p-4 sm:p-6">
-                  <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0"
+                <div className="flex items-start gap-3 p-3 sm:p-6">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0"
                     style={{ background: 'linear-gradient(135deg, #1A1A2E, #0A1A0A)' }}>
                     {candidate.photo_url ? (
                       <img src={candidate.photo_url} alt={candidate.full_name} className="w-full h-full object-cover object-top" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <User size={24} style={{ color: 'rgba(212,168,67,0.3)' }} />
+                        <User size={20} style={{ color: 'rgba(212,168,67,0.3)' }} />
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(76,175,80,0.15)', color: '#4CAF50' }}>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(76,175,80,0.15)', color: '#4CAF50' }}>
                         #{pos}
                       </span>
-                      <h3 className="font-display font-semibold" style={{ color: '#FFFFFF' }}>{candidate.full_name}</h3>
+                      <h3 className="font-display font-semibold text-sm sm:text-base truncate" style={{ color: '#FFFFFF' }}>{candidate.full_name}</h3>
                     </div>
                     {candidate.bio && (
-                      <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>{candidate.bio}</p>
+                      <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.45)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{candidate.bio}</p>
                     )}
-                    <p className="text-sm font-bold mt-2" style={{ color: '#4CAF50' }}>
+                    <p className="text-xs sm:text-sm font-bold mt-1.5" style={{ color: '#4CAF50' }}>
                       {candidate.vote_count} vote{candidate.vote_count !== 1 ? 's' : ''}
                     </p>
                   </div>
                   {isSelected && (
-                    <CheckCircle size={20} style={{ color: '#4CAF50' }} className="shrink-0" />
+                    <CheckCircle size={18} style={{ color: '#4CAF50' }} className="shrink-0" />
                   )}
                 </div>
               </div>
@@ -234,7 +234,7 @@ export default function VotePage() {
 
         {/* Payment form */}
         {votingOpen && (
-          <div className="glass-card rounded-2xl p-5 sm:p-6 mt-8">
+          <div className="glass-card rounded-2xl p-4 sm:p-6 mt-8">
             <h3 className="font-display text-lg font-semibold mb-4" style={{ color: '#FFFFFF' }}>
               {selectedCandidateData ? `Vote for ${selectedCandidateData.full_name}` : 'Select a candidate to vote'}
             </h3>
@@ -244,19 +244,21 @@ export default function VotePage() {
                 {/* Quantity stepper */}
                 <div>
                   <label className="block text-xs mb-2" style={{ color: 'rgba(255,255,255,0.55)' }}>Number of Votes</label>
-                  <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-10 h-10 rounded-xl flex items-center justify-center btn-ghost">
-                      <Minus size={16} />
-                    </button>
-                    <input type="number" min={1} value={quantity}
-                      onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="input-field w-20 text-center px-3 py-2.5 rounded-xl text-lg font-bold" />
-                    <button type="button" onClick={() => setQuantity(quantity + 1)}
-                      className="w-10 h-10 rounded-xl flex items-center justify-center btn-ghost">
-                      <Plus size={16} />
-                    </button>
-                    <span className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center btn-ghost">
+                        <Minus size={16} />
+                      </button>
+                      <input type="number" min={1} value={quantity}
+                        onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="input-field w-16 sm:w-20 text-center px-2 py-2 rounded-xl text-base sm:text-lg font-bold" />
+                      <button type="button" onClick={() => setQuantity(quantity + 1)}
+                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center btn-ghost">
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                    <span className="text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
                       at ₦{priceInNaira}/vote
                     </span>
                   </div>
@@ -275,13 +277,13 @@ export default function VotePage() {
                 </div>
 
                 {/* Total & pay button */}
-                <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'rgba(76,175,80,0.08)', border: '1px solid rgba(76,175,80,0.15)' }}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl" style={{ background: 'rgba(76,175,80,0.08)', border: '1px solid rgba(76,175,80,0.15)' }}>
                   <div>
                     <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Total</p>
-                    <p className="text-2xl font-display font-bold gold-text">₦{totalNaira}</p>
+                    <p className="text-xl sm:text-2xl font-display font-bold gold-text">₦{totalNaira}</p>
                   </div>
                   <button type="submit" disabled={processing || !voterName.trim() || !voterEmail.trim()}
-                    className="btn-gold px-8 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
+                    className="btn-gold px-6 sm:px-8 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 w-full sm:w-auto justify-center">
                     {processing ? <Loader2 size={16} className="animate-spin" /> : null}
                     {processing ? 'Processing...' : `Pay ₦${totalNaira}`}
                   </button>
