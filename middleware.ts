@@ -28,8 +28,11 @@ function addSecurityHeaders(response: NextResponse) {
   response.headers.set('X-XSS-Protection', '0')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   response.headers.set('Cross-Origin-Resource-Policy', 'same-origin')
-  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin')
-  response.headers.set('Cross-Origin-Embedder-Policy', 'credentialless')
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups')
+  // Cross-Origin-Embedder-Policy intentionally omitted — it blocks Paystack's
+  // checkout iframe (no matching COEP header) with NS_ERROR_DOM_COEP_FAILED.
+  // This app has no SharedArrayBuffer or WASM threading dependency, and the
+  // payment flow's need for a third-party iframe wins this tradeoff.
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=()')
   return response
 }
