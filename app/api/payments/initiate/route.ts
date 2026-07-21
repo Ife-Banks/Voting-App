@@ -60,7 +60,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to initiate payment' }, { status: 500 })
     }
 
-    return NextResponse.json({ amount_kobo: amountKobo, reference })
+    return NextResponse.json({
+      amount_kobo: amountKobo,
+      reference,
+      channels: ['card', 'bank', 'bank_transfer', 'ussd'],
+    })
   } catch (err) {
     logError('payments', 'initiate', err instanceof Error ? err.message : 'unknown')
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

@@ -26,7 +26,7 @@ export default function VotePage() {
   const [voterEmail, setVoterEmail] = useState('')
   const [processing, setProcessing] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
-  const [paymentConfig, setPaymentConfig] = useState<{ reference: string; amount_kobo: number } | null>(null)
+  const [paymentConfig, setPaymentConfig] = useState<{ reference: string; amount_kobo: number; channels: string[] } | null>(null)
 
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? ''
 
@@ -125,7 +125,7 @@ export default function VotePage() {
         return
       }
 
-      setPaymentConfig({ reference: initData.reference, amount_kobo: initData.amount_kobo })
+      setPaymentConfig({ reference: initData.reference, amount_kobo: initData.amount_kobo, channels: initData.channels })
     } catch {
       setResult({ success: false, message: 'Something went wrong starting payment.' })
       setProcessing(false)
@@ -311,6 +311,7 @@ export default function VotePage() {
           email={voterEmail.trim()}
           amount={paymentConfig.amount_kobo}
           reference={paymentConfig.reference}
+          channels={paymentConfig.channels}
           onSuccess={onCheckoutSuccess}
           onClose={onCheckoutClose}
         />

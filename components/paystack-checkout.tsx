@@ -8,6 +8,7 @@ export default function PaystackCheckout({
   email,
   amount,
   reference,
+  channels,
   onSuccess,
   onClose,
 }: {
@@ -15,11 +16,12 @@ export default function PaystackCheckout({
   email: string
   amount: number
   reference: string
+  channels: string[]
   onSuccess: () => void
   onClose: () => void
 }) {
   const initialized = useRef(false)
-  const initializePayment = usePaystackPayment({ publicKey, email, amount, reference })
+  const initializePayment = usePaystackPayment({ publicKey, email, amount, reference, channels })
 
   useEffect(() => {
     if (initialized.current) return
