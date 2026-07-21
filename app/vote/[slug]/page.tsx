@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import type { Candidate, Settings } from '@/lib/types'
-import { Loader2, User, ChevronRight, Minus, Plus, ArrowLeft, CheckCircle, XCircle, TrendingUp } from 'lucide-react'
+import { Loader2, User, Minus, Plus, ArrowLeft, CheckCircle, XCircle, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 
-declare const PaystackPop: any
+const PaystackCheckout = dynamic(() => import('@/components/paystack-checkout'), { ssr: false })
 
 export default function VotePage() {
   const params = useParams()
@@ -24,21 +25,10 @@ export default function VotePage() {
   const [voterName, setVoterName] = useState('')
   const [voterEmail, setVoterEmail] = useState('')
   const [processing, setProcessing] = useState(false)
-  const [paystackReady, setPaystackReady] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [paymentConfig, setPaymentConfig] = useState<{ reference: string; amount_kobo: number } | null>(null)
 
-  // Poll until Paystack script finishes loading
-  useEffect(() => {
-    if (typeof PaystackPop !== 'undefined') { setPaystackReady(true); return }
-    const check = setInterval(() => {
-      if (typeof PaystackPop !== 'undefined') {
-        setPaystackReady(true)
-        clearInterval(check)
-      }
-    }, 200)
-    const timeout = setTimeout(() => clearInterval(check), 8000)
-    return () => { clearInterval(check); clearTimeout(timeout) }
-  }, [])
+  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? ''
 
   useEffect(() => {
     const supabase = createClient()
@@ -82,14 +72,44 @@ export default function VotePage() {
 
   const selectedCandidateData = candidates.find(c => c.id === selectedCandidate)
 
-  async function handlePay() {
+  function onCheckoutSuccess() {
+    setProcessing(false)
+    const pc = paymentConfig
+    if (!pc) return
+    const qty = quantity
+    fetch(`/api/payments/verify?reference=${pc.reference}`)
+      .then(r => r.json())
+      .then(verifyData => {
+        if (verifyData.success || verifyData.already_processed) {
+          setResult({ success: true, message: `Vote cast successfully! You bought ${qty} vote${qty > 1 ? 's' : ''}.` })
+          setQuantity(1)
+          setVoterName('')
+          setVoterEmail('')
+          setSelectedCandidate(null)
+        } else {
+          setResult({ success: false, message: 'Payment verification failed. Vote will be counted via webhook.' })
+        }
+        setPaymentConfig(null)
+      })
+      .catch(() => {
+        setResult({ success: false, message: 'Payment verification failed. Vote will be counted via webhook.' })
+        setPaymentConfig(null)
+      })
+  }
+
+  function onCheckoutClose() {
+    setProcessing(false)
+    setPaymentConfig(null)
+  }
+
+  async function handleInitiate() {
     if (!selectedCandidate || !voterName.trim() || !voterEmail.trim() || quantity < 1) return
     setProcessing(true)
     setResult(null)
-    console.log('[pay] starting — paystackReady:', paystackReady)
+    console.log('[initiate] starting')
 
     try {
-      console.log('[pay] calling POST /api/payments/initiate')
+      console.log('[initiate] calling POST /api/payments/initiate')
       const initRes = await fetch('/api/payments/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,7 +120,7 @@ export default function VotePage() {
           voter_email: voterEmail.trim(),
         }),
       })
-      console.log('[pay] initiate responded with status', initRes.status)
+      console.log('[initiate] responded with status', initRes.status)
       const initData = await initRes.json()
       if (!initRes.ok) {
         setResult({ success: false, message: initData.error ?? 'Failed to initiate payment' })
@@ -108,58 +128,10 @@ export default function VotePage() {
         return
       }
 
-      const { amount_kobo, reference } = initData
-      console.log('[pay] payment initiated:', { amount_kobo, reference })
-
-      const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
-      if (!publicKey) {
-        setResult({ success: false, message: 'Payment not configured' })
-        setProcessing(false)
-        return
-      }
-
-      if (typeof PaystackPop === 'undefined') {
-        console.error('[pay] PaystackPop not loaded')
-        setResult({ success: false, message: 'Payment system not yet loaded. Please wait a moment and try again.' })
-        setProcessing(false)
-        return
-      }
-
-      console.log('[pay] opening Paystack popup')
-      const handler = PaystackPop.setup({
-        key: publicKey,
-        email: voterEmail.trim(),
-        amount: amount_kobo,
-        ref: reference,
-        onClose: () => {
-          console.log('[pay] popup closed by user')
-          setProcessing(false)
-        },
-        callback: (response: any) => {
-          console.log('[pay] popup callback fired, reference:', response.reference)
-          setProcessing(false)
-          fetch(`/api/payments/verify?reference=${response.reference}`)
-            .then(r => r.json())
-            .then(verifyData => {
-              if (verifyData.success || verifyData.already_processed) {
-                setResult({ success: true, message: `Vote cast successfully! You bought ${quantity} vote${quantity > 1 ? 's' : ''}.` })
-                setQuantity(1)
-                setVoterName('')
-                setVoterEmail('')
-                setSelectedCandidate(null)
-              } else {
-                setResult({ success: false, message: 'Payment verification failed. Vote will be counted via webhook.' })
-              }
-            })
-            .catch(() => {
-              setResult({ success: false, message: 'Payment verification failed. Vote will be counted via webhook.' })
-            })
-        },
-      })
-      handler.openIframe()
-      console.log('[pay] openIframe() called')
+      console.log('[initiate] success, opening checkout:', { reference: initData.reference, amount_kobo: initData.amount_kobo })
+      setPaymentConfig({ reference: initData.reference, amount_kobo: initData.amount_kobo })
     } catch (err) {
-      console.error('[pay] hard failure:', err)
+      console.error('[initiate] error:', err)
       setResult({ success: false, message: `Something went wrong: ${err instanceof Error ? err.message : String(err)}` })
       setProcessing(false)
     }
@@ -273,7 +245,7 @@ export default function VotePage() {
             </h3>
 
             {selectedCandidate ? (
-              <form onSubmit={(e) => { e.preventDefault(); handlePay() }} className="space-y-4">
+              <form onSubmit={(e) => { e.preventDefault(); handleInitiate() }} className="space-y-4">
                 {/* Quantity stepper */}
                 <div>
                   <label className="block text-xs mb-2" style={{ color: 'rgba(255,255,255,0.55)' }}>Number of Votes</label>
@@ -313,10 +285,10 @@ export default function VotePage() {
                     <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Total</p>
                     <p className="text-2xl font-display font-bold gold-text">₦{totalNaira}</p>
                   </div>
-                  <button type="submit" disabled={processing || !paystackReady || !voterName.trim() || !voterEmail.trim()}
+                  <button type="submit" disabled={processing || !voterName.trim() || !voterEmail.trim()}
                     className="btn-gold px-8 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
                     {processing ? <Loader2 size={16} className="animate-spin" /> : null}
-                    {!paystackReady ? 'Loading payment system\u2026' : processing ? 'Processing...' : `Pay ₦${totalNaira}`}
+                    {processing ? 'Processing...' : `Pay ₦${totalNaira}`}
                   </button>
                 </div>
               </form>
@@ -335,6 +307,17 @@ export default function VotePage() {
           </div>
         )}
       </div>
+
+      {paymentConfig && (
+        <PaystackCheckout
+          publicKey={publicKey}
+          email={voterEmail.trim()}
+          amount={paymentConfig.amount_kobo}
+          reference={paymentConfig.reference}
+          onSuccess={onCheckoutSuccess}
+          onClose={onCheckoutClose}
+        />
+      )}
     </div>
   )
 }
