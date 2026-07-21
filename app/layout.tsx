@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import './globals.css'
 
 export const dynamic = 'force-dynamic'
@@ -28,10 +29,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <script src="https://js.paystack.co/v1/inline.js" defer />
-      </head>
-      <body className="noise antialiased">{children}</body>
+      <body className="noise antialiased">
+        <Script src="https://js.paystack.co/v1/inline.js" strategy="afterInteractive" />
+        {children}
+      </body>
     </html>
   )
 }

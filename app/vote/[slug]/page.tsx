@@ -24,7 +24,21 @@ export default function VotePage() {
   const [voterName, setVoterName] = useState('')
   const [voterEmail, setVoterEmail] = useState('')
   const [processing, setProcessing] = useState(false)
+  const [paystackReady, setPaystackReady] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  // Poll until Paystack script finishes loading
+  useEffect(() => {
+    if (typeof PaystackPop !== 'undefined') { setPaystackReady(true); return }
+    const check = setInterval(() => {
+      if (typeof PaystackPop !== 'undefined') {
+        setPaystackReady(true)
+        clearInterval(check)
+      }
+    }, 200)
+    const timeout = setTimeout(() => clearInterval(check), 8000)
+    return () => { clearInterval(check); clearTimeout(timeout) }
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -72,9 +86,10 @@ export default function VotePage() {
     if (!selectedCandidate || !voterName.trim() || !voterEmail.trim() || quantity < 1) return
     setProcessing(true)
     setResult(null)
+    console.log('[pay] starting — paystackReady:', paystackReady)
 
     try {
-      // 1. Initiate payment
+      console.log('[pay] calling POST /api/payments/initiate')
       const initRes = await fetch('/api/payments/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -85,6 +100,7 @@ export default function VotePage() {
           voter_email: voterEmail.trim(),
         }),
       })
+      console.log('[pay] initiate responded with status', initRes.status)
       const initData = await initRes.json()
       if (!initRes.ok) {
         setResult({ success: false, message: initData.error ?? 'Failed to initiate payment' })
@@ -93,8 +109,8 @@ export default function VotePage() {
       }
 
       const { amount_kobo, reference } = initData
+      console.log('[pay] payment initiated:', { amount_kobo, reference })
 
-      // 2. Open Paystack Popup
       const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
       if (!publicKey) {
         setResult({ success: false, message: 'Payment not configured' })
@@ -103,49 +119,47 @@ export default function VotePage() {
       }
 
       if (typeof PaystackPop === 'undefined') {
-        console.error('[vote] PaystackPop not loaded — script may be blocked by CSP')
-        setResult({ success: false, message: 'Payment system not loaded. Check console for CSP errors.' })
+        console.error('[pay] PaystackPop not loaded')
+        setResult({ success: false, message: 'Payment system not yet loaded. Please wait a moment and try again.' })
         setProcessing(false)
         return
       }
 
-      try {
-        const handler = PaystackPop.setup({
-          key: publicKey,
-          email: voterEmail.trim(),
-          amount: amount_kobo,
-          ref: reference,
-          onClose: () => {
-            setProcessing(false)
-          },
-          callback: (response: any) => {
-            setProcessing(false)
-            fetch(`/api/payments/verify?reference=${response.reference}`)
-              .then(r => r.json())
-              .then(verifyData => {
-                if (verifyData.success || verifyData.already_processed) {
-                  setResult({ success: true, message: `Vote cast successfully! You bought ${quantity} vote${quantity > 1 ? 's' : ''}.` })
-                  setQuantity(1)
-                  setVoterName('')
-                  setVoterEmail('')
-                  setSelectedCandidate(null)
-                } else {
-                  setResult({ success: false, message: 'Payment verification failed. Vote will be counted via webhook.' })
-                }
-              })
-              .catch(() => {
+      console.log('[pay] opening Paystack popup')
+      const handler = PaystackPop.setup({
+        key: publicKey,
+        email: voterEmail.trim(),
+        amount: amount_kobo,
+        ref: reference,
+        onClose: () => {
+          console.log('[pay] popup closed by user')
+          setProcessing(false)
+        },
+        callback: (response: any) => {
+          console.log('[pay] popup callback fired, reference:', response.reference)
+          setProcessing(false)
+          fetch(`/api/payments/verify?reference=${response.reference}`)
+            .then(r => r.json())
+            .then(verifyData => {
+              if (verifyData.success || verifyData.already_processed) {
+                setResult({ success: true, message: `Vote cast successfully! You bought ${quantity} vote${quantity > 1 ? 's' : ''}.` })
+                setQuantity(1)
+                setVoterName('')
+                setVoterEmail('')
+                setSelectedCandidate(null)
+              } else {
                 setResult({ success: false, message: 'Payment verification failed. Vote will be counted via webhook.' })
-              })
-          },
-        })
-        handler.openIframe()
-      } catch (err) {
-        console.error('[vote] PaystackPop error:', err)
-        setResult({ success: false, message: `Paystack error: ${err instanceof Error ? err.message : String(err)}` })
-        setProcessing(false)
-      }
+              }
+            })
+            .catch(() => {
+              setResult({ success: false, message: 'Payment verification failed. Vote will be counted via webhook.' })
+            })
+        },
+      })
+      handler.openIframe()
+      console.log('[pay] openIframe() called')
     } catch (err) {
-      console.error('[vote] Pay error:', err)
+      console.error('[pay] hard failure:', err)
       setResult({ success: false, message: `Something went wrong: ${err instanceof Error ? err.message : String(err)}` })
       setProcessing(false)
     }
@@ -259,19 +273,19 @@ export default function VotePage() {
             </h3>
 
             {selectedCandidate ? (
-              <div className="space-y-4">
+              <form onSubmit={(e) => { e.preventDefault(); handlePay() }} className="space-y-4">
                 {/* Quantity stepper */}
                 <div>
                   <label className="block text-xs mb-2" style={{ color: 'rgba(255,255,255,0.55)' }}>Number of Votes</label>
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))}
                       className="w-10 h-10 rounded-xl flex items-center justify-center btn-ghost">
                       <Minus size={16} />
                     </button>
                     <input type="number" min={1} value={quantity}
                       onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                       className="input-field w-20 text-center px-3 py-2.5 rounded-xl text-lg font-bold" />
-                    <button onClick={() => setQuantity(quantity + 1)}
+                    <button type="button" onClick={() => setQuantity(quantity + 1)}
                       className="w-10 h-10 rounded-xl flex items-center justify-center btn-ghost">
                       <Plus size={16} />
                     </button>
@@ -299,13 +313,13 @@ export default function VotePage() {
                     <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Total</p>
                     <p className="text-2xl font-display font-bold gold-text">₦{totalNaira}</p>
                   </div>
-                  <button onClick={handlePay} disabled={processing || !voterName.trim() || !voterEmail.trim()}
+                  <button type="submit" disabled={processing || !paystackReady || !voterName.trim() || !voterEmail.trim()}
                     className="btn-gold px-8 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
                     {processing ? <Loader2 size={16} className="animate-spin" /> : null}
-                    {processing ? 'Processing...' : `Pay ₦${totalNaira}`}
+                    {!paystackReady ? 'Loading payment system\u2026' : processing ? 'Processing...' : `Pay ₦${totalNaira}`}
                   </button>
                 </div>
-              </div>
+              </form>
             ) : (
               <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
                 Click on a candidate card above to start voting.
