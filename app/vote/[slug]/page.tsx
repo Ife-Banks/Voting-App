@@ -206,8 +206,6 @@ export default function VotePage() {
 
         <div className="grid gap-4">
           {candidates.map(candidate => {
-            const sorted = [...candidates].sort((a, b) => b.vote_count - a.vote_count)
-            const pos = sorted.findIndex(c => c.id === candidate.id) + 1
             const isSelected = selectedCandidate === candidate.id
 
             return (
@@ -227,17 +225,16 @@ export default function VotePage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-[10px] sm:text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(76,175,80,0.15)', color: '#4CAF50' }}>
-                        #{pos}
-                      </span>
                       <h3 className="font-display font-semibold text-sm sm:text-base truncate" style={{ color: '#FFFFFF' }}>{candidate.full_name}</h3>
                     </div>
                     {candidate.bio && (
                       <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.45)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{candidate.bio}</p>
                     )}
-                    <p className="text-xs sm:text-sm font-bold mt-1.5" style={{ color: '#4CAF50' }}>
-                      {candidate.vote_count} vote{candidate.vote_count !== 1 ? 's' : ''}
-                    </p>
+                    {settings?.results_visible && (
+                      <p className="text-xs sm:text-sm font-bold mt-1.5" style={{ color: '#4CAF50' }}>
+                        {candidate.vote_count} vote{candidate.vote_count !== 1 ? 's' : ''}
+                      </p>
+                    )}
                   </div>
                   {isSelected && (
                     <CheckCircle size={18} style={{ color: '#4CAF50' }} className="shrink-0" />
