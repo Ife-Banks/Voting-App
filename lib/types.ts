@@ -27,7 +27,8 @@ export interface Payment {
   quantity: number
   price_per_vote_kobo: number
   amount_kobo: number
-  paystack_reference: string
+  tx_ref: string
+  flw_transaction_id: number | null
   status: 'pending' | 'success' | 'failed'
   created_at: string
   verified_at: string | null

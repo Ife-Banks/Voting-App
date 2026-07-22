@@ -2,49 +2,54 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-server'
 import { logError } from '@/lib/logger'
 
-async function verifyPaystackSignature(body: string, signature: string | null): Promise<boolean> {
-  if (!signature) return false
-  const secret = process.env.PAYSTACK_SECRET_KEY
-  if (!secret) return false
-
-  const enc = new TextEncoder()
-  const key = await crypto.subtle.importKey(
-    'raw',
-    enc.encode(secret),
-    { name: 'HMAC', hash: 'SHA-512' },
-    false,
-    ['sign']
-  )
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(body))
-  const sigArr = new Uint8Array(sig)
-  let sigHex = ''
-  for (let i = 0; i < sigArr.length; i++) sigHex += sigArr[i].toString(16).padStart(2, '0')
-  return sigHex === signature
-}
-
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.text()
-    const signature = req.headers.get('x-paystack-signature')
-
-    const valid = await verifyPaystackSignature(body, signature)
-    if (!valid) {
+    // Flutterwave V3 webhook: static secret hash comparison via verif-hash header
+    const signature = req.headers.get('verif-hash')
+    const secretHash = process.env.FLW_WEBHOOK_SECRET_HASH
+    if (!signature || signature !== secretHash) {
       logError('payments', 'webhook', 'Invalid signature')
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
-    const payload = JSON.parse(body)
+    const payload = await req.json()
 
-    // Only process charge.success events
-    if (payload.event !== 'charge.success') {
+    // Only process charge.completed events
+    if (payload.event !== 'charge.completed') {
       return NextResponse.json({ status: 'ignored' })
     }
 
-    const reference = payload.data?.reference
-    const amountKobo = payload.data?.amount
+    const flwId = payload.data?.id
+    const txRef = payload.data?.tx_ref
 
-    if (!reference || !amountKobo) {
+    if (!flwId || !txRef) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+    }
+
+    const secretKey = process.env.FLW_SECRET_KEY
+    if (!secretKey) {
+      return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
+    }
+
+    // Re-verify server-side (don't trust the webhook payload directly)
+    const flwRes = await fetch(`https://api.flutterwave.com/v3/transactions/${flwId}/verify`, {
+      headers: { Authorization: `Bearer ${secretKey}` },
+    })
+
+    if (!flwRes.ok) {
+      logError('payments', 'webhook-verify', `Flutterwave verify returned ${flwRes.status}`)
+      return NextResponse.json({ error: 'Verification failed' }, { status: 502 })
+    }
+
+    const flwData = await flwRes.json()
+
+    if (
+      flwData.status !== 'success' ||
+      flwData.data?.status !== 'successful' ||
+      flwData.data?.tx_ref !== txRef ||
+      flwData.data?.currency !== 'NGN'
+    ) {
+      return NextResponse.json({ status: 'not_successful' })
     }
 
     const supabase = createAdminClient()
@@ -52,8 +57,12 @@ export async function POST(req: NextRequest) {
     // Atomic status transition - only succeeds if still 'pending'
     const { data: payment, error: updateError } = await supabase
       .from('payments')
-      .update({ status: 'success', verified_at: new Date().toISOString() })
-      .eq('paystack_reference', reference)
+      .update({
+        status: 'success',
+        verified_at: new Date().toISOString(),
+        flw_transaction_id: Number(flwId),
+      })
+      .eq('tx_ref', txRef)
       .eq('status', 'pending')
       .select()
       .single()

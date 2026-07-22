@@ -9,12 +9,12 @@ function buildCSP(): string {
   const host = url ? new URL(url).host : '*.supabase.co'
   return [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://js.paystack.co`,
-    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://paystack.com`,
-    `img-src 'self' data: blob: https://${host} https://checkout.paystack.com`,
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://checkout.flutterwave.com`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+    `img-src 'self' data: blob: https://${host} https://checkout.flutterwave.com`,
     `font-src 'self' data: https://fonts.gstatic.com`,
-    `connect-src 'self' https://${host} wss://${host} https://vercel.live https://api.paystack.co`,
-    `frame-src 'self' https://vercel.live https://checkout.paystack.com`,
+    `connect-src 'self' https://${host} wss://${host} https://vercel.live https://api.flutterwave.com https://api.ravepay.co`,
+    `frame-src 'self' https://vercel.live https://checkout.flutterwave.com https://checkout-v3.flutterwave.com`,
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
@@ -29,7 +29,7 @@ function addSecurityHeaders(response: NextResponse) {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   response.headers.set('Cross-Origin-Resource-Policy', 'same-origin')
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups')
-  // Cross-Origin-Embedder-Policy intentionally omitted — it blocks Paystack's
+  // Cross-Origin-Embedder-Policy intentionally omitted — it blocks Flutterwave's
   // checkout iframe (no matching COEP header) with NS_ERROR_DOM_COEP_FAILED.
   // This app has no SharedArrayBuffer or WASM threading dependency, and the
   // payment flow's need for a third-party iframe wins this tradeoff.

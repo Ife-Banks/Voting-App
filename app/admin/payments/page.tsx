@@ -28,14 +28,14 @@ export default function PaymentsPage() {
     const filtered = search ? payments.filter(p =>
       p.voter_name.toLowerCase().includes(search.toLowerCase()) ||
       p.voter_email.toLowerCase().includes(search.toLowerCase()) ||
-      p.paystack_reference.toLowerCase().includes(search.toLowerCase())
+      p.tx_ref.toLowerCase().includes(search.toLowerCase())
     ) : payments
 
-    const rows = ['Voter Name,Voter Email,Candidate,Quantity,Price/Vote (₦),Amount (₦),Reference,Status,Date']
+    const rows = ['Voter Name,Voter Email,Candidate,Quantity,Price/Vote (₦),Amount (₦),Tx Ref,Status,Date']
     for (const p of filtered) {
       const priceNaira = p.price_per_vote_kobo / 100
       const amountNaira = p.amount_kobo / 100
-      rows.push(`"${p.voter_name}","${p.voter_email}",,${p.quantity},${priceNaira},${amountNaira},"${p.paystack_reference}",${p.status},${new Date(p.created_at).toISOString()}`)
+      rows.push(`"${p.voter_name}","${p.voter_email}",,${p.quantity},${priceNaira},${amountNaira},"${p.tx_ref}",${p.status},${new Date(p.created_at).toISOString()}`)
     }
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
     const a = document.createElement('a')
@@ -47,7 +47,7 @@ export default function PaymentsPage() {
   const filtered = search ? payments.filter(p =>
     p.voter_name.toLowerCase().includes(search.toLowerCase()) ||
     p.voter_email.toLowerCase().includes(search.toLowerCase()) ||
-    p.paystack_reference.toLowerCase().includes(search.toLowerCase())
+    p.tx_ref.toLowerCase().includes(search.toLowerCase())
   ) : payments
 
   if (loading) return (

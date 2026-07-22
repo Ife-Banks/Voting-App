@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const amountKobo = quantity * pricePerVoteKobo
 
     // Generate unique reference
-    const reference = `SCA-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+    const txRef = `SCA-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
 
     // Insert pending payment row
     const { error: insertError } = await supabase.from('payments').insert({
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       quantity,
       price_per_vote_kobo: pricePerVoteKobo,
       amount_kobo: amountKobo,
-      paystack_reference: reference,
+      tx_ref: txRef,
       status: 'pending',
     })
 
@@ -60,10 +60,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to initiate payment' }, { status: 500 })
     }
 
+    // Flutterwave expects amounts in Naira, not kobo
     return NextResponse.json({
-      amount_kobo: amountKobo,
-      reference,
-      channels: ['card', 'bank', 'bank_transfer', 'ussd'],
+      amount_naira: amountKobo / 100,
+      tx_ref: txRef,
+      payment_options: 'card,ussd,banktransfer,mobilemoney',
     })
   } catch (err) {
     logError('payments', 'initiate', err instanceof Error ? err.message : 'unknown')

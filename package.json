@@ -9,10 +9,10 @@
     "test:email-fallback": "tsx scripts/test-email-fallback.ts"
   },
   "dependencies": {
-    "@paystack/inline-js": "^2.23.1",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.0",
     "clsx": "^2.1.1",
+    "flutterwave-react-v3": "^1.3.3",
     "html-to-image": "^1.11.13",
     "lucide-react": "^0.383.0",
     "next": "14.2.29",
@@ -20,7 +20,6 @@
     "react": "^18",
     "react-dom": "^18",
     "react-easy-crop": "^5.5.7",
-    "react-paystack": "^6.0.0",
     "recharts": "^2.15.4"
   },
   "devDependencies": {

@@ -9,7 +9,7 @@ import { Loader2, User, Minus, Plus, ArrowLeft, CheckCircle, XCircle, TrendingUp
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
-const PaystackCheckout = dynamic(() => import('@/components/paystack-checkout'), { ssr: false })
+const FlutterwaveCheckout = dynamic(() => import('@/components/flutterwave-checkout'), { ssr: false })
 
 export default function VotePage() {
   const params = useParams()
@@ -25,11 +25,12 @@ export default function VotePage() {
   const [quantity, setQuantity] = useSessionStorage<number>(`vote:${slug}:quantity`, 1)
   const [voterName, setVoterName] = useSessionStorage<string>(`vote:${slug}:name`, '')
   const [voterEmail, setVoterEmail] = useSessionStorage<string>(`vote:${slug}:email`, '')
+  const [voterPhone, setVoterPhone] = useSessionStorage<string>(`vote:${slug}:phone`, '')
   const [processing, setProcessing] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
-  const [paymentConfig, setPaymentConfig] = useState<{ reference: string; amount_kobo: number; channels: string[] } | null>(null)
+  const [paymentConfig, setPaymentConfig] = useState<{ tx_ref: string; amount_naira: number; payment_options: string } | null>(null)
 
-  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? ''
+  const publicKey = process.env.NEXT_PUBLIC_FLW_PUBLIC_KEY ?? ''
 
   useEffect(() => {
     const supabase = createClient()
@@ -73,12 +74,12 @@ export default function VotePage() {
 
   const selectedCandidateData = candidates.find(c => c.id === selectedCandidate)
 
-  function onCheckoutSuccess() {
+  function onCheckoutSuccess(transactionId: number) {
     setProcessing(false)
     const pc = paymentConfig
     if (!pc) return
     const qty = quantity
-    fetch(`/api/payments/verify?reference=${pc.reference}`)
+    fetch(`/api/payments/verify?transaction_id=${transactionId}&reference=${pc.tx_ref}`)
       .then(r => r.json())
       .then(verifyData => {
         if (verifyData.success || verifyData.already_processed) {
@@ -90,11 +91,13 @@ export default function VotePage() {
           setQuantity(1)
           setVoterName('')
           setVoterEmail('')
+          setVoterPhone('')
           setSelectedCandidate(null)
           sessionStorage.removeItem(`vote:${slug}:candidate`)
           sessionStorage.removeItem(`vote:${slug}:quantity`)
           sessionStorage.removeItem(`vote:${slug}:name`)
           sessionStorage.removeItem(`vote:${slug}:email`)
+          sessionStorage.removeItem(`vote:${slug}:phone`)
         } else {
           setResult({ success: true, message: 'Payment received — vote will appear shortly.' })
         }
@@ -134,7 +137,11 @@ export default function VotePage() {
         return
       }
 
-      setPaymentConfig({ reference: initData.reference, amount_kobo: initData.amount_kobo, channels: initData.channels })
+      setPaymentConfig({
+        tx_ref: initData.tx_ref,
+        amount_naira: initData.amount_naira,
+        payment_options: initData.payment_options,
+      })
     } catch {
       setResult({ success: false, message: 'Something went wrong starting payment.' })
       setProcessing(false)
@@ -284,6 +291,11 @@ export default function VotePage() {
                   <input type="email" value={voterEmail} onChange={e => setVoterEmail(e.target.value)}
                     className="input-field w-full px-4 py-3 rounded-xl text-sm" placeholder="email@example.com" />
                 </div>
+                <div>
+                  <label className="block text-xs mb-2" style={{ color: 'rgba(255,255,255,0.55)' }}>Phone Number</label>
+                  <input type="tel" value={voterPhone} onChange={e => setVoterPhone(e.target.value)}
+                    className="input-field w-full px-4 py-3 rounded-xl text-sm" placeholder="08012345678" />
+                </div>
 
                 {/* Total & pay button */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl" style={{ background: 'rgba(76,175,80,0.08)', border: '1px solid rgba(76,175,80,0.15)' }}>
@@ -315,12 +327,14 @@ export default function VotePage() {
       </div>
 
       {paymentConfig && (
-        <PaystackCheckout
+        <FlutterwaveCheckout
           publicKey={publicKey}
           email={voterEmail.trim()}
-          amount={paymentConfig.amount_kobo}
-          reference={paymentConfig.reference}
-          channels={paymentConfig.channels}
+          name={voterName.trim()}
+          phone_number={voterPhone.trim() || '00000000000'}
+          amount_naira={paymentConfig.amount_naira}
+          tx_ref={paymentConfig.tx_ref}
+          payment_options={paymentConfig.payment_options}
           onSuccess={onCheckoutSuccess}
           onClose={onCheckoutClose}
         />
