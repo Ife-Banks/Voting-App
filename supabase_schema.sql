@@ -1,5 +1,5 @@
 -- ============================================================
--- NASSA VOTING APP — FULL SETUP (NASSA Branch)
+-- NACOS VOTING APP — FULL SETUP (NACOS Branch)
 -- Run this entire file in your Supabase SQL Editor
 -- ============================================================
 
@@ -84,7 +84,7 @@ ALTER TABLE settings ADD COLUMN IF NOT EXISTS otp_enabled BOOLEAN DEFAULT TRUE;
 ALTER TABLE students ADD COLUMN IF NOT EXISTS voted_from_ip TEXT;
 
 INSERT INTO settings (id, voting_open, results_public, otp_enabled, election_name, school_name)
-VALUES (1, FALSE, FALSE, TRUE, 'NASSA Executive Elections 2025/2026', 'Abiola Ajimobi Technical University')
+VALUES (1, FALSE, FALSE, TRUE, 'NACOS Executive Elections 2025/2026', 'Abiola Ajimobi Technical University')
 ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS admin_profiles (

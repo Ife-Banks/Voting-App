@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase'
 import type { Position, VoteSelection } from '@/lib/types'
 import { CheckCircle2, ChevronRight, ChevronLeft, LogOut, AlertCircle, Loader2, User, Trophy } from 'lucide-react'
 import Image from 'next/image'
-import ResultsBoard from '@/components/ResultsBoard'
 
 export default function VotePage() {
   const [positions, setPositions] = useState<Position[]>([])
@@ -19,7 +18,7 @@ export default function VotePage() {
   const [userEmail, setUserEmail] = useState('')
   const [votingOpen, setVotingOpen] = useState(true)
   const [resultsPublic, setResultsPublic] = useState(false)
-  const [electionName, setElectionName] = useState('NASSA Executive Elections')
+  const [electionName, setElectionName] = useState('NACOS Executive Elections')
   const [alreadyVoted, setAlreadyVoted] = useState(false)
   const router = useRouter()
 
@@ -95,28 +94,6 @@ export default function VotePage() {
     }
   }, [])
 
-  useEffect(() => {
-    if (!submitted) return
-    const supabase = createClient()
-
-    supabase.from('positions').select('*, candidates(*)').order('display_order')
-      .then(({ data }) => { if (data) setPositions(data) })
-
-    const channel = supabase
-      .channel('live-results')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'candidates' }, payload => {
-        setPositions(prev => prev.map(pos => ({
-          ...pos,
-          candidates: (pos.candidates ?? []).map(c =>
-            c.id === payload.new.id ? { ...c, vote_count: payload.new.vote_count } : c
-          )
-        })))
-      })
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [submitted])
-
   function selectCandidate(positionId: string, candidateId: string) {
     setSelections(prev => ({ ...prev, [positionId]: candidateId }))
   }
@@ -165,32 +142,24 @@ export default function VotePage() {
 
   if (submitted) {
     return (
-      <div className="page-shell min-h-screen px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="glass-card rounded-2xl p-6 mb-8 text-center"
-            style={{ background: 'rgba(212,168,67,0.08)', border: '1px solid rgba(212,168,67,0.25)' }}>
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4"
-              style={{ background: 'linear-gradient(135deg, #1A1A2E, #2A2A3E)', border: '2px solid #4CAF50' }}>
-              <CheckCircle2 size={40} style={{ color: '#4CAF50' }} />
-            </div>
-            <h1 className="text-3xl font-display font-bold gold-text mb-2">
-              Vote Submitted!
-            </h1>
-            <p className="text-sm mb-1" style={{ color: 'rgba(255,255,255,0.7)' }}>
-              Your vote has been recorded. Results update in real time below.
-            </p>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              Thank you for participating in the {electionName}.
-            </p>
+      <div className="page-shell min-h-screen flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6"
+            style={{ background: 'linear-gradient(135deg, #1A1A2E, #2A2A3E)', border: '2px solid #4CAF50' }}>
+            <CheckCircle2 size={40} style={{ color: '#4CAF50' }} />
           </div>
-
-          <ResultsBoard positions={positions} />
-
-          <div className="mt-8 text-center">
-            <button onClick={handleLogout} className="btn-ghost px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto">
-              <LogOut size={16} /> Sign Out
-            </button>
-          </div>
+          <h1 className="text-3xl font-display font-bold gold-text mb-3">
+            Vote Submitted!
+          </h1>
+          <p className="text-sm mb-2" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            Your vote has been successfully recorded.
+          </p>
+          <p className="text-xs mb-8" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            Thank you for participating in the {electionName}.
+          </p>
+          <button onClick={handleLogout} className="btn-ghost px-8 py-3 rounded-xl text-sm flex items-center gap-2 mx-auto">
+            <LogOut size={16} /> Sign Out
+          </button>
         </div>
       </div>
     )

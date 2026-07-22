@@ -144,7 +144,7 @@ export default function VerifyOtpPage() {
                 <Image src="/image.png" alt="Logo" fill className="object-contain rounded-2xl" />
               </div>
               <h1 className="text-4xl sm:text-5xl font-display font-bold green-text mb-3">
-                {settings?.election_name ?? 'NASSA Elections'}
+                {settings?.election_name ?? 'NACOS Elections'}
               </h1>
               <p className="max-w-lg text-sm sm:text-base" style={{ color: 'rgba(255,255,255,0.55)' }}>
                 {settings?.school_name ?? 'Student Elections Portal'}
@@ -240,7 +240,7 @@ export default function VerifyOtpPage() {
           </p>
 
           <p className="text-center text-xs mt-8" style={{ color: 'rgba(255,255,255,0.25)' }}>
-            Powered by NASSA Voting System &bull; {new Date().getFullYear()}
+            Powered by NACOS Voting System &bull; {new Date().getFullYear()}
           </p>
         </div>
       </div>

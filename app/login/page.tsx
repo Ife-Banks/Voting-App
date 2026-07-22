@@ -114,7 +114,7 @@ export default function LoginPage() {
           <div className="relative z-10 max-w-xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(212,168,67,0.18)] bg-white/5 px-4 py-2 text-xs text-[rgba(255,255,255,0.7)]">
               <Vote size={14} style={{ color: '#4CAF50' }} />
-              NASSA's Student voting portal
+              NACOS's Student voting portal
             </div>
 
             <div className="mt-8 mb-10">
@@ -122,7 +122,7 @@ export default function LoginPage() {
                 <Image src="/image.png" alt="Logo" fill className="object-contain rounded-2xl" />
               </div>
               <h1 className="text-4xl sm:text-5xl font-display font-bold green-text mb-3">
-                {settings?.election_name ?? 'NASSA Elections'}
+                {settings?.election_name ?? 'NACOS Elections'}
               </h1>
               <p className="max-w-lg text-sm sm:text-base" style={{ color: 'rgba(255,255,255,0.55)' }}>
                 {settings?.school_name ?? ' Student Elections Portal'}
@@ -243,7 +243,7 @@ export default function LoginPage() {
           </div>
 
           <p className="text-center text-xs mt-8" style={{ color: 'rgba(255,255,255,0.25)' }}>
-            Powered by NASSA Voting System &bull; {new Date().getFullYear()}
+            Powered by NACOS Voting System &bull; {new Date().getFullYear()}
           </p>
         </div>
       </div>

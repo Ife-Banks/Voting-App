@@ -13,7 +13,7 @@ export default function ResultsPage() {
   const [loading, setLoading] = useState(true)
   const [votingOpen, setVotingOpen] = useState(true)
   const [resultsPublic, setResultsPublic] = useState(false)
-  const [electionName, setElectionName] = useState('NASSA Executive Elections')
+  const [electionName, setElectionName] = useState('NACOS Executive Elections')
   const [schoolName, setSchoolName] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const router = useRouter()
@@ -40,7 +40,7 @@ export default function ResultsPage() {
         if (settings) {
           setVotingOpen(settings.voting_open ?? true)
           setResultsPublic(settings.results_public ?? false)
-          setElectionName(settings.election_name ?? 'NASSA Executive Elections')
+          setElectionName(settings.election_name ?? 'NACOS Executive Elections')
           setSchoolName(settings.school_name ?? '')
         }
 
