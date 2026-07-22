@@ -36,21 +36,22 @@ export async function GET(req: NextRequest) {
     })
 
     if (!flwRes.ok) {
-      logError('payments', 'verify-flutterwave', `Flutterwave returned ${flwRes.status}`)
-      return NextResponse.json({ error: 'Payment verification failed' }, { status: 502 })
+      const flwErr = await flwRes.text()
+      logError('payments', 'verify-flutterwave', `Flutterwave returned ${flwRes.status}: ${flwErr}`)
+      return NextResponse.json({ error: 'Payment verification failed', details: flwErr }, { status: 502 })
     }
 
     const flwData = await flwRes.json()
 
     // Validate transaction
     if (
-      flwData.status !== 'success' ||
-      flwData.data?.status !== 'successful' ||
+      (flwData.status !== 'success' && flwData.status !== 'completed') ||
+      (flwData.data?.status !== 'successful' && flwData.data?.status !== 'completed') ||
       flwData.data?.tx_ref !== txRef ||
       flwData.data?.currency !== 'NGN' ||
       Number(flwData.data?.amount) < expectedAmountNaira
     ) {
-      return NextResponse.json({ error: 'Payment not successful' }, { status: 400 })
+      return NextResponse.json({ error: 'Payment not successful', details: flwData }, { status: 400 })
     }
 
     const channel = flwData.data.payment_type as string | undefined

@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
     const flwData = await flwRes.json()
 
     if (
-      flwData.status !== 'success' ||
-      flwData.data?.status !== 'successful' ||
+      (flwData.status !== 'success' && flwData.status !== 'completed') ||
+      (flwData.data?.status !== 'successful' && flwData.data?.status !== 'completed') ||
       flwData.data?.tx_ref !== txRef ||
       flwData.data?.currency !== 'NGN'
     ) {

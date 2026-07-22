@@ -52,7 +52,7 @@ export default function FlutterwaveCheckout({
     handleFlutterPayment({
       callback: (response) => {
         closePaymentModal()
-        if (response.status === 'successful') {
+        if (response.status === 'successful' || response.status === 'completed') {
           onSuccess(response.transaction_id)
         } else {
           onClose()
