@@ -42,6 +42,7 @@ export interface Settings {
   price_per_vote_kobo: number
   award_name: string
   school_name: string
+  results_visible: boolean
   updated_at: string
 }
 

@@ -29,6 +29,7 @@ export default function VotePage() {
   const [processing, setProcessing] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
   const [paymentConfig, setPaymentConfig] = useState<{ tx_ref: string; amount_naira: number; payment_options: string } | null>(null)
+  const redirectTimerRef = useState(() => ({ current: null as ReturnType<typeof setTimeout> | null }))[0]
 
   const publicKey = process.env.NEXT_PUBLIC_FLW_PUBLIC_KEY ?? ''
 
@@ -82,30 +83,24 @@ export default function VotePage() {
     fetch(`/api/payments/verify?transaction_id=${transactionId}&reference=${pc.tx_ref}`)
       .then(r => r.json())
       .then(verifyData => {
-        if (verifyData.success || verifyData.already_processed) {
-          const was = verifyData.channel
-          const isNonCard = was && was !== 'card'
-          setResult({ success: true, message: isNonCard
-            ? `Payment received — confirming with your bank, your ${qty} vote${qty > 1 ? 's' : ''} will appear shortly.`
-            : `Vote cast successfully! You bought ${qty} vote${qty > 1 ? 's' : ''}.` })
-          setQuantity(1)
-          setVoterName('')
-          setVoterEmail('')
-          setVoterPhone('')
-          setSelectedCandidate(null)
-          sessionStorage.removeItem(`vote:${slug}:candidate`)
-          sessionStorage.removeItem(`vote:${slug}:quantity`)
-          sessionStorage.removeItem(`vote:${slug}:name`)
-          sessionStorage.removeItem(`vote:${slug}:email`)
-          sessionStorage.removeItem(`vote:${slug}:phone`)
-        } else {
-          setResult({ success: true, message: 'Payment received — vote will appear shortly.' })
-        }
+        setResult({ success: true, message: 'Your vote has successfully been cast. Results will be displayed in due time.' })
+        setQuantity(1)
+        setVoterName('')
+        setVoterEmail('')
+        setVoterPhone('')
+        setSelectedCandidate(null)
+        sessionStorage.removeItem(`vote:${slug}:candidate`)
+        sessionStorage.removeItem(`vote:${slug}:quantity`)
+        sessionStorage.removeItem(`vote:${slug}:name`)
+        sessionStorage.removeItem(`vote:${slug}:email`)
+        sessionStorage.removeItem(`vote:${slug}:phone`)
         setPaymentConfig(null)
+        redirectTimerRef.current = setTimeout(() => { window.location.href = '/' }, 3000)
       })
       .catch(() => {
-        setResult({ success: true, message: 'Payment received — vote will appear shortly.' })
+        setResult({ success: true, message: 'Your vote has successfully been cast. Results will be displayed in due time.' })
         setPaymentConfig(null)
+        redirectTimerRef.current = setTimeout(() => { window.location.href = '/' }, 3000)
       })
   }
 
@@ -113,6 +108,11 @@ export default function VotePage() {
     setProcessing(false)
     setPaymentConfig(null)
   }
+
+  // Cleanup redirect timer on unmount
+  useEffect(() => {
+    return () => { if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current) }
+  }, [])
 
   async function handleInitiate() {
     if (!selectedCandidate || !voterName.trim() || !voterEmail.trim() || quantity < 1) return

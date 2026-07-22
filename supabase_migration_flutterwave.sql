@@ -10,3 +10,6 @@ ALTER TABLE payments ADD COLUMN IF NOT EXISTS flw_transaction_id BIGINT;
 
 -- Fix: service_role needs SELECT on payments to verify transactions
 GRANT SELECT ON payments TO service_role;
+
+-- Add results visibility toggle
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS results_visible BOOLEAN DEFAULT FALSE;

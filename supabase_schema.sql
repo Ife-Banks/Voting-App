@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS settings (
   price_per_vote_kobo INT DEFAULT 10000,
   award_name TEXT DEFAULT 'NASSA Student Choice Award',
   school_name TEXT DEFAULT 'Abiola Ajimobi Technical University',
+  results_visible BOOLEAN DEFAULT FALSE,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 

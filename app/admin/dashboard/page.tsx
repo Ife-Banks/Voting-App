@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ positions: 0, candidates: 0, payments: 0, totalRevenue: 0 })
   const [loading, setLoading] = useState(true)
   const [togglingAward, setTogglingAward] = useState(false)
+  const [togglingResults, setTogglingResults] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [awardName, setAwardName] = useState('')
   const [schoolName, setSchoolName] = useState('')
@@ -54,6 +55,19 @@ export default function AdminDashboard() {
     const { data } = await res.json()
     if (data) setSettings(data)
     setTogglingAward(false)
+  }
+
+  async function toggleResultsVisible() {
+    if (!settings) return
+    setTogglingResults(true)
+    const res = await fetch('/api/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggle_results_visible' }),
+    })
+    const { data } = await res.json()
+    if (data) setSettings(data)
+    setTogglingResults(false)
   }
 
   async function saveSettings() {
@@ -131,6 +145,36 @@ export default function AdminDashboard() {
               className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${settings?.award_open ? 'bg-red-900/30 border border-red-700/50 text-red-400 hover:bg-red-900/50' : 'btn-gold'}`}>
               {togglingAward ? <Loader2 size={16} className="animate-spin" /> :
                 settings?.award_open ? <><ToggleLeft size={18} /> Close Voting</> : <><ToggleRight size={18} /> Open Voting</>}
+            </button>
+          )}
+        </div>
+
+        {/* Results visibility toggle */}
+        <div className="glass-card rounded-2xl p-6">
+          <h2 className="text-lg font-display font-semibold mb-4" style={{ color: '#FFFFFF' }}>
+            Results Visibility
+          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <p className="font-medium mb-1" style={{ color: '#FFFFFF' }}>
+                {settings?.results_visible ? 'Results are SHOWING' : 'Results are HIDDEN'}
+              </p>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                {settings?.results_visible
+                  ? 'Public leaderboard displays live results'
+                  : 'Public leaderboard shows a coming soon message'}
+              </p>
+            </div>
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${settings?.results_visible ? 'badge-open' : 'badge-closed'}`}>
+              {settings?.results_visible ? 'SHOWING' : 'HIDDEN'}
+            </span>
+          </div>
+
+          {isSuperAdmin && (
+            <button onClick={toggleResultsVisible} disabled={togglingResults}
+              className={`w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${settings?.results_visible ? 'bg-red-900/30 border border-red-700/50 text-red-400 hover:bg-red-900/50' : 'btn-gold'}`}>
+              {togglingResults ? <Loader2 size={16} className="animate-spin" /> :
+                settings?.results_visible ? <><ToggleLeft size={18} /> Hide Results</> : <><ToggleRight size={18} /> Show Results</>}
             </button>
           )}
         </div>

@@ -83,6 +83,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ data })
     }
 
+    if (action === 'toggle_results_visible') {
+      const { data: current } = await supabase.from('settings').select('results_visible').eq('id', 1).single()
+      const { data, error } = await supabase
+        .from('settings')
+        .update({ results_visible: !current?.results_visible })
+        .eq('id', 1)
+        .select()
+        .single()
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ data })
+    }
+
     if (action === 'save_settings') {
       const { award_name, school_name, price_per_vote_kobo } = body as {
         award_name?: string; school_name?: string; price_per_vote_kobo?: number
