@@ -142,7 +142,7 @@ CREATE POLICY "candidates_update" ON storage.objects FOR UPDATE
 ------------------------------------------------------
 GRANT INSERT, UPDATE, DELETE ON positions TO service_role;
 GRANT INSERT, UPDATE, DELETE ON candidates TO service_role;
-GRANT INSERT, UPDATE, DELETE ON payments TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON payments TO service_role;
 GRANT UPDATE ON settings TO service_role;
 GRANT INSERT, UPDATE, DELETE ON admin_profiles TO service_role;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO service_role;
