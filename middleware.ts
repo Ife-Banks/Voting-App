@@ -13,7 +13,7 @@ function buildCSP(): string {
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: blob: https://${host} https://checkout.flutterwave.com`,
     `font-src 'self' data: https://fonts.gstatic.com`,
-    `connect-src 'self' https://${host} wss://${host} https://vercel.live https://api.flutterwave.com https://api.ravepay.co`,
+    `connect-src 'self' https://${host} wss://${host} https://vercel.live https://api.flutterwave.com https://api.ravepay.co https://flw-events-ge.myflutterwave.com https://cors-anywhere.herokuapp.com`,
     `frame-src 'self' https://vercel.live https://checkout.flutterwave.com https://checkout-v3.flutterwave.com`,
     "base-uri 'self'",
     "form-action 'self'",
