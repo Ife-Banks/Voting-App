@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useSessionStorage } from '@/lib/use-session-storage'
 import type { Candidate, Settings } from '@/lib/types'
-import { Loader2, User, Minus, Plus, ArrowLeft, CheckCircle, XCircle, TrendingUp, Share2, Link as LinkIcon } from 'lucide-react'
+import { Loader2, User, Minus, Plus, ArrowLeft, CheckCircle, XCircle, TrendingUp, Link as LinkIcon } from 'lucide-react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
@@ -176,30 +176,32 @@ export default function VotePage() {
   return (
     <div className="page-shell min-h-screen flex flex-col">
       <header className="border-b" style={{ borderColor: 'rgba(212,168,67,0.15)', background: 'rgba(10,10,15,0.82)', backdropFilter: 'blur(18px)' }}>
-        <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/awards" className="p-2 -ml-2 rounded-lg hover:bg-white/5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            <ArrowLeft size={18} />
+        <div className="mx-auto flex w-full max-w-5xl items-center gap-1.5 px-3 py-3 sm:gap-3 sm:px-6 sm:py-4 lg:px-8">
+          <Link href="/awards" className="p-1.5 -ml-1 rounded-lg hover:bg-white/5 shrink-0" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            <ArrowLeft size={16} />
           </Link>
-          <div className="min-w-0">
-            <h1 className="font-display text-lg font-semibold gold-text truncate">{position.title}</h1>
+          <div className="min-w-0 flex-1">
+            <h1 className="font-display text-base sm:text-lg font-semibold gold-text truncate">{position.title}</h1>
             {position.description && (
-              <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>{position.description}</p>
+              <p className="text-[10px] sm:text-xs truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>{position.description}</p>
             )}
           </div>
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(window.location.href)
-              setLinkCopied(true)
-              setTimeout(() => setLinkCopied(false), 2000)
-            }}
-            className="btn-ghost px-3 sm:px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 shrink-0"
-          >
-            {linkCopied ? <CheckCircle size={12} className="text-green-400" /> : <LinkIcon size={12} />}
-            <span className="hidden sm:inline">{linkCopied ? 'Copied!' : 'Copy Link'}</span>
-          </button>
-          <Link href="/leaderboard" className="ml-auto btn-ghost px-3 sm:px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 shrink-0">
-            <TrendingUp size={12} /> <span className="hidden sm:inline">Live Leaderboard</span>
-          </Link>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href)
+                setLinkCopied(true)
+                setTimeout(() => setLinkCopied(false), 2000)
+              }}
+              className="p-2 rounded-lg hover:bg-white/5"
+              title="Copy link"
+            >
+              {linkCopied ? <CheckCircle size={15} className="text-green-400" /> : <LinkIcon size={15} style={{ color: 'rgba(255,255,255,0.4)' }} />}
+            </button>
+            <Link href="/leaderboard" className="p-2 rounded-lg hover:bg-white/5" title="Live Leaderboard">
+              <TrendingUp size={15} style={{ color: 'rgba(255,255,255,0.4)' }} />
+            </Link>
+          </div>
         </div>
       </header>
 
