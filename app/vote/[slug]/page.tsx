@@ -30,7 +30,6 @@ export default function VotePage() {
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
   const [paymentConfig, setPaymentConfig] = useState<{ tx_ref: string; amount_naira: number; payment_options: string } | null>(null)
   const [linkCopied, setLinkCopied] = useState(false)
-  const redirectTimerRef = useState(() => ({ current: null as ReturnType<typeof setTimeout> | null }))[0]
 
   const publicKey = process.env.NEXT_PUBLIC_FLW_PUBLIC_KEY ?? ''
 
@@ -96,12 +95,10 @@ export default function VotePage() {
         sessionStorage.removeItem(`vote:${slug}:email`)
         sessionStorage.removeItem(`vote:${slug}:phone`)
         setPaymentConfig(null)
-        redirectTimerRef.current = setTimeout(() => { window.location.href = '/' }, 3000)
       })
       .catch(() => {
         setResult({ success: true, message: 'Your vote has successfully been cast. Results will be displayed in due time.' })
         setPaymentConfig(null)
-        redirectTimerRef.current = setTimeout(() => { window.location.href = '/' }, 3000)
       })
   }
 
@@ -109,11 +106,6 @@ export default function VotePage() {
     setProcessing(false)
     setPaymentConfig(null)
   }
-
-  // Cleanup redirect timer on unmount
-  useEffect(() => {
-    return () => { if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current) }
-  }, [])
 
   async function handleInitiate() {
     if (!selectedCandidate || !voterName.trim() || !voterEmail.trim() || quantity < 1) return
@@ -328,9 +320,16 @@ export default function VotePage() {
             )}
 
             {result && (
-              <div className={`mt-4 p-4 rounded-xl flex items-center gap-3 ${result.success ? 'bg-green-900/20 border border-green-700/30' : 'bg-red-900/20 border border-red-700/30'}`}>
-                {result.success ? <CheckCircle size={18} style={{ color: '#4CAF50' }} /> : <XCircle size={18} style={{ color: '#E74C3C' }} />}
-                <p className="text-sm" style={{ color: result.success ? '#4CAF50' : '#E74C3C' }}>{result.message}</p>
+              <div className={`mt-4 p-4 rounded-xl ${result.success ? 'bg-green-900/20 border border-green-700/30' : 'bg-red-900/20 border border-red-700/30'}`}>
+                <div className="flex items-center gap-3">
+                  {result.success ? <CheckCircle size={18} style={{ color: '#4CAF50' }} /> : <XCircle size={18} style={{ color: '#E74C3C' }} />}
+                  <p className="text-sm" style={{ color: result.success ? '#4CAF50' : '#E74C3C' }}>{result.message}</p>
+                </div>
+                {result.success && (
+                  <Link href="/" className="mt-3 btn-gold px-5 py-2 rounded-xl text-xs inline-flex items-center gap-2">
+                    Back to Home
+                  </Link>
+                )}
               </div>
             )}
           </div>
