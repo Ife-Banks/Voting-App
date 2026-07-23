@@ -23,24 +23,18 @@ export default function AdminDashboard() {
 
   async function load() {
     const supabase = createClient()
-    const [{ data: s }, { data: positions }, { data: candidates }, { data: payments }] = await Promise.all([
+    const [{ data: s }, statsRes] = await Promise.all([
       supabase.from('settings').select('*').single(),
-      supabase.from('positions').select('id'),
-      supabase.from('candidates').select('id'),
-      supabase.from('payments').select('amount_kobo, status').eq('status', 'success'),
+      fetch('/api/admin/stats'),
     ])
+    const stats = statsRes.ok ? await statsRes.json() : { positions: 0, candidates: 0, payments: 0, totalRevenue: 0 }
     if (s) {
       setSettings(s)
       setAwardName(s.award_name)
       setSchoolName(s.school_name)
       setPricePerVote((s.price_per_vote_kobo / 100).toString())
     }
-    setStats({
-      positions: positions?.length ?? 0,
-      candidates: candidates?.length ?? 0,
-      payments: payments?.length ?? 0,
-      totalRevenue: payments?.reduce((sum, p) => sum + (p as any).amount_kobo, 0) ?? 0,
-    })
+    setStats(stats)
     setLoading(false)
   }
 
