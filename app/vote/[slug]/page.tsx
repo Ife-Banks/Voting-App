@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useSessionStorage } from '@/lib/use-session-storage'
 import type { Candidate, Settings } from '@/lib/types'
-import { Loader2, User, Minus, Plus, ArrowLeft, CheckCircle, XCircle, TrendingUp } from 'lucide-react'
+import { Loader2, User, Minus, Plus, ArrowLeft, CheckCircle, XCircle, TrendingUp, Share2, Link as LinkIcon } from 'lucide-react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
@@ -29,6 +29,7 @@ export default function VotePage() {
   const [processing, setProcessing] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
   const [paymentConfig, setPaymentConfig] = useState<{ tx_ref: string; amount_naira: number; payment_options: string } | null>(null)
+  const [linkCopied, setLinkCopied] = useState(false)
   const redirectTimerRef = useState(() => ({ current: null as ReturnType<typeof setTimeout> | null }))[0]
 
   const publicKey = process.env.NEXT_PUBLIC_FLW_PUBLIC_KEY ?? ''
@@ -185,6 +186,17 @@ export default function VotePage() {
               <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>{position.description}</p>
             )}
           </div>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href)
+              setLinkCopied(true)
+              setTimeout(() => setLinkCopied(false), 2000)
+            }}
+            className="btn-ghost px-3 sm:px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 shrink-0"
+          >
+            {linkCopied ? <CheckCircle size={12} className="text-green-400" /> : <LinkIcon size={12} />}
+            <span className="hidden sm:inline">{linkCopied ? 'Copied!' : 'Copy Link'}</span>
+          </button>
           <Link href="/leaderboard" className="ml-auto btn-ghost px-3 sm:px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 shrink-0">
             <TrendingUp size={12} /> <span className="hidden sm:inline">Live Leaderboard</span>
           </Link>
