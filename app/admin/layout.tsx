@@ -68,7 +68,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push('/admin/login')
   }
 
-  const restrictedPaths = ['/admin/admins']
+  const restrictedPaths = ['/admin/admins', '/admin/results']
   if (adminProfile && adminProfile.role !== 'super_admin' && restrictedPaths.some(p => pathname.startsWith(p))) {
     router.push('/admin/dashboard')
     return null

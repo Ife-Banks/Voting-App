@@ -59,6 +59,9 @@ export async function POST(req: NextRequest) {
   if (!admin) {
     return NextResponse.json({ error: 'Not authenticated as admin' }, { status: 401 })
   }
+  if (admin.role !== 'super_admin') {
+    return NextResponse.json({ error: 'Super admin required' }, { status: 403 })
+  }
 
   let body: Record<string, unknown>
   try {

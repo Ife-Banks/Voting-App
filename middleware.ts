@@ -100,6 +100,49 @@ export async function middleware(request: NextRequest) {
     return addSecurityHeaders(supabaseResponse)
   }
 
+  // Block regular admins from /leaderboard
+  if (path === '/leaderboard' || path.startsWith('/leaderboard/')) {
+    let supabaseResponse = NextResponse.next({ request })
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return request.cookies.getAll() },
+          setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+            supabaseResponse = NextResponse.next({ request })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, { ...options, secure: isProduction })
+            )
+          },
+        },
+      }
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user?.email) {
+      const isSuperAdmin = user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL
+      if (!isSuperAdmin) {
+        try {
+          const adminClient = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            { auth: { autoRefreshToken: false, persistSession: false } }
+          )
+          const { data: adminProfile } = await adminClient
+            .from('admin_profiles')
+            .select('id')
+            .eq('email', user.email)
+            .single()
+          if (adminProfile) {
+            return addSecurityHeaders(NextResponse.redirect(new URL('/admin/dashboard', request.url)))
+          }
+        } catch {}
+      }
+    }
+    return addSecurityHeaders(supabaseResponse)
+  }
+
   // All public pages pass through
   return addSecurityHeaders(NextResponse.next())
 }
