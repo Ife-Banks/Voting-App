@@ -6,18 +6,28 @@ import { logError } from '@/lib/logger'
 export const maxDuration = 30
 
 export async function GET(req: NextRequest) {
-  // Protect with CRON_SECRET — Vercel Cron sends Authorization: Bearer <CRON_SECRET>
   const authHeader = req.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    console.log('[cron-reconcile] Unauthorized — missing or mismatched CRON_SECRET')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  console.log('[cron-reconcile] Authorized, starting reconciliation...')
 
   const supabase = createAdminClient()
 
   try {
-    // Find all pending payments older than 15 minutes
     const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString()
+    console.log(`[cron-reconcile] Cutoff: ${cutoff}`)
+
+    // First: count ALL pending payments (including recent ones) for context
+    const { count: totalPending } = await supabase
+      .from('payments')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')
+    console.log(`[cron-reconcile] Total pending payments (all ages): ${totalPending ?? 'unknown'}`)
+
     const { data: pendingPayments, error } = await supabase
       .from('payments')
       .select('id, tx_ref, flw_transaction_id, amount_kobo, candidate_id, quantity, status')
@@ -28,12 +38,19 @@ export async function GET(req: NextRequest) {
 
     if (error) {
       logError('cron-reconcile', 'query', error.message)
+      console.error(`[cron-reconcile] Query error: ${error.message}`)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    console.log(`[cron-reconcile] Found ${pendingPayments?.length ?? 0} pending payments older than 15 min`)
+
     if (!pendingPayments || pendingPayments.length === 0) {
-      console.log('[cron-reconcile] No pending payments older than 15 minutes')
       return NextResponse.json({ summary: { checked: 0, succeeded: 0, failed: 0, still_pending: 0 }, results: [] })
+    }
+
+    // Log first few for debugging
+    for (const p of pendingPayments.slice(0, 3)) {
+      console.log(`[cron-reconcile]   -> id=${p.id} tx_ref=${p.tx_ref} flw_id=${p.flw_transaction_id} amount_kobo=${p.amount_kobo} created=${p.created_at}`)
     }
 
     const results = []
@@ -42,13 +59,14 @@ export async function GET(req: NextRequest) {
     let stillPending = 0
 
     for (const p of pendingPayments) {
+      console.log(`[cron-reconcile] Re-verifying ${p.tx_ref} (flw_id=${p.flw_transaction_id})...`)
       const result = await reverifyPayment(supabase, p)
+      console.log(`[cron-reconcile]   result=${result.result} detail=${result.detail}`)
       results.push(result)
       if (result.result === 'success') succeeded++
       else if (result.result === 'failed') failed++
       else stillPending++
 
-      // Rate limit: 300ms between Flutterwave API calls
       await new Promise(r => setTimeout(r, 300))
     }
 
@@ -59,6 +77,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'unknown'
     logError('cron-reconcile', 'unknown', msg)
+    console.error(`[cron-reconcile] Exception: ${msg}`)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

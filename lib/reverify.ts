@@ -21,53 +21,52 @@ export async function reverifyPayment(
 ): Promise<ReverifyResult> {
   const secretKey = process.env.FLW_SECRET_KEY
   if (!secretKey) {
+    console.log(`[reverify] FLW_SECRET_KEY not set`)
     return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: 'FLW_SECRET_KEY not set' }
   }
 
   const expectedAmountNaira = payment.amount_kobo / 100
-
   let flwData: any = null
 
-  // Step 1: Verify with Flutterwave
   if (payment.flw_transaction_id) {
-    // We have the numeric ID — verify directly
+    console.log(`[reverify] Verifying by ID: ${payment.flw_transaction_id}`)
     const res = await fetch(`https://api.flutterwave.com/v3/transactions/${payment.flw_transaction_id}/verify`, {
       headers: { Authorization: `Bearer ${secretKey}` },
     })
     if (!res.ok) {
       const txt = await res.text()
-      logError('reverify', 'flw-verify-by-id', `HTTP ${res.status}: ${txt}`)
+      console.error(`[reverify] Flutterwave HTTP ${res.status}: ${txt}`)
       return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: `Flutterwave HTTP ${res.status}` }
     }
     flwData = await res.json()
+    console.log(`[reverify] Flutterwave response: status=${flwData?.status} data.status=${flwData?.data?.status} data.tx_ref=${flwData?.data?.tx_ref} data.amount=${flwData?.data?.amount} data.currency=${flwData?.data?.currency}`)
   } else {
-    // No numeric ID — look up by tx_ref
+    console.log(`[reverify] No flw_transaction_id, verifying by tx_ref: ${payment.tx_ref}`)
     const res = await fetch(`https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${encodeURIComponent(payment.tx_ref)}`, {
       headers: { Authorization: `Bearer ${secretKey}` },
     })
     if (!res.ok) {
       const txt = await res.text()
-      logError('reverify', 'flw-verify-by-ref', `HTTP ${res.status}: ${txt}`)
+      console.error(`[reverify] Flutterwave HTTP ${res.status}: ${txt}`)
       return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: `Flutterwave HTTP ${res.status}` }
     }
     flwData = await res.json()
+    console.log(`[reverify] Flutterwave response: status=${flwData?.status} data.status=${flwData?.data?.status} data.tx_ref=${flwData?.data?.tx_ref} data.amount=${flwData?.data?.amount} data.currency=${flwData?.data?.currency}`)
   }
 
-  // Step 2: Validate the Flutterwave response
   const flwStatus = flwData?.data?.status
   const flwTxRef = flwData?.data?.tx_ref
   const flwCurrency = flwData?.data?.currency
   const flwAmount = Number(flwData?.data?.amount)
   const flwId = flwData?.data?.id
 
-  // If Flutterwave says it's still pending (e.g. bank transfer awaiting confirmation)
   if (flwStatus === 'pending') {
+    console.log(`[reverify] ${payment.tx_ref} still pending on Flutterwave`)
     return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'still_pending', detail: 'Flutterwave status: pending' }
   }
 
-  // If Flutterwave says it failed
   if (flwStatus === 'failed') {
-    // Mark as failed in DB
+    console.log(`[reverify] ${payment.tx_ref} failed on Flutterwave, marking as failed in DB`)
     await supabase
       .from('payments')
       .update({ status: 'failed', verified_at: new Date().toISOString() })
@@ -76,25 +75,29 @@ export async function reverifyPayment(
     return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: 'Flutterwave status: failed' }
   }
 
-  // Validate successful
   const isSuccessful = flwStatus === 'successful' || flwStatus === 'completed'
   const outerSuccess = flwData?.status === 'success' || flwData?.status === 'completed'
 
   if (!outerSuccess || !isSuccessful) {
+    console.log(`[reverify] ${payment.tx_ref} unexpected status: outer=${flwData?.status} inner=${flwStatus}`)
     return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: `Unexpected status: ${flwData?.status}/${flwStatus}` }
   }
   if (flwTxRef !== payment.tx_ref) {
+    console.log(`[reverify] ${payment.tx_ref} tx_ref mismatch: got ${flwTxRef}`)
     return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: `tx_ref mismatch: ${flwTxRef}` }
   }
   if (flwCurrency !== 'NGN') {
+    console.log(`[reverify] ${payment.tx_ref} currency mismatch: got ${flwCurrency}`)
     return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: `Currency mismatch: ${flwCurrency}` }
   }
   if (flwAmount < expectedAmountNaira) {
+    console.log(`[reverify] ${payment.tx_ref} amount mismatch: ${flwAmount} < ${expectedAmountNaira}`)
     return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: `Amount mismatch: ${flwAmount} < ${expectedAmountNaira}` }
   }
 
-  // Step 3: Atomic status transition (pending → success)
+  // Atomic status transition
   const flwIdToStore = flwId ? Number(flwId) : payment.flw_transaction_id
+  console.log(`[reverify] ${payment.tx_ref} validation passed, updating DB...`)
   const { data: updated, error: updateError } = await supabase
     .from('payments')
     .update({
@@ -108,25 +111,26 @@ export async function reverifyPayment(
     .single()
 
   if (updateError) {
-    logError('reverify', 'update', updateError.message)
+    console.error(`[reverify] ${payment.tx_ref} DB update error: ${updateError.message}`)
     return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: `DB update error: ${updateError.message}` }
   }
 
-  // No row returned = already processed by someone else
   if (!updated) {
+    console.log(`[reverify] ${payment.tx_ref} already processed (no row returned)`)
     return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'success', detail: 'Already processed' }
   }
 
-  // Step 4: Increment votes
+  // Increment votes
   const { error: incrementError } = await supabase.rpc('increment_candidate_votes', {
     p_candidate_id: payment.candidate_id,
     p_quantity: payment.quantity,
   })
 
   if (incrementError) {
-    logError('reverify', 'increment', incrementError.message)
+    console.error(`[reverify] ${payment.tx_ref} vote increment error: ${incrementError.message}`)
     return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'success', detail: 'Payment updated but vote increment failed' }
   }
 
+  console.log(`[reverify] ${payment.tx_ref} SUCCESS — verified and ${payment.quantity} vote(s) incremented`)
   return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'success', detail: 'Verified and votes incremented' }
 }
