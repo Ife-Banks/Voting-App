@@ -18,21 +18,16 @@ export async function GET(req: NextRequest) {
   const supabase = createAdminClient()
 
   try {
-    const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString()
-    console.log(`[cron-reconcile] Cutoff: ${cutoff}`)
-
-    // First: count ALL pending payments (including recent ones) for context
     const { count: totalPending } = await supabase
       .from('payments')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'pending')
-    console.log(`[cron-reconcile] Total pending payments (all ages): ${totalPending ?? 'unknown'}`)
+    console.log(`[cron-reconcile] Total pending payments: ${totalPending ?? 'unknown'}`)
 
     const { data: pendingPayments, error } = await supabase
       .from('payments')
-      .select('id, tx_ref, flw_transaction_id, amount_kobo, candidate_id, quantity, status')
+      .select('id, tx_ref, flw_transaction_id, amount_kobo, candidate_id, quantity, status, created_at')
       .eq('status', 'pending')
-      .lt('created_at', cutoff)
       .order('created_at', { ascending: true })
       .limit(25)
 
@@ -42,7 +37,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log(`[cron-reconcile] Found ${pendingPayments?.length ?? 0} pending payments older than 15 min`)
+    console.log(`[cron-reconcile] Found ${pendingPayments?.length ?? 0} pending payments to check`)
 
     if (!pendingPayments || pendingPayments.length === 0) {
       return NextResponse.json({ summary: { checked: 0, succeeded: 0, failed: 0, still_pending: 0 }, results: [] })

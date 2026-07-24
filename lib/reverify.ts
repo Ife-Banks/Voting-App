@@ -1,5 +1,4 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { logError } from '@/lib/logger'
 
 export type ReverifyResult = {
   payment_id: string
@@ -17,6 +16,7 @@ export async function reverifyPayment(
     amount_kobo: number
     candidate_id: string
     quantity: number
+    created_at?: string
   }
 ): Promise<ReverifyResult> {
   const secretKey = process.env.FLW_SECRET_KEY
@@ -36,6 +36,21 @@ export async function reverifyPayment(
     if (!res.ok) {
       const txt = await res.text()
       console.error(`[reverify] Flutterwave HTTP ${res.status}: ${txt}`)
+      if (res.status === 400 || res.status === 404) {
+        const ageMs = payment.created_at ? Date.now() - new Date(payment.created_at).getTime() : 0
+        const ageHours = ageMs / (1000 * 60 * 60)
+        if (ageHours > 24) {
+          console.log(`[reverify] ${payment.tx_ref} not found and >24h old, marking failed`)
+          await supabase
+            .from('payments')
+            .update({ status: 'failed', verified_at: new Date().toISOString() })
+            .eq('id', payment.id)
+            .eq('status', 'pending')
+          return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: 'Transaction not found (>24h old)' }
+        }
+        console.log(`[reverify] ${payment.tx_ref} not found but only ${ageHours.toFixed(1)}h old, leaving as pending`)
+        return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'still_pending', detail: `Transaction not found (${ageHours.toFixed(1)}h old, money may be in transit)` }
+      }
       return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: `Flutterwave HTTP ${res.status}` }
     }
     flwData = await res.json()
@@ -48,6 +63,21 @@ export async function reverifyPayment(
     if (!res.ok) {
       const txt = await res.text()
       console.error(`[reverify] Flutterwave HTTP ${res.status}: ${txt}`)
+      if (res.status === 400 || res.status === 404) {
+        const ageMs = payment.created_at ? Date.now() - new Date(payment.created_at).getTime() : 0
+        const ageHours = ageMs / (1000 * 60 * 60)
+        if (ageHours > 24) {
+          console.log(`[reverify] ${payment.tx_ref} not found and >24h old, marking failed`)
+          await supabase
+            .from('payments')
+            .update({ status: 'failed', verified_at: new Date().toISOString() })
+            .eq('id', payment.id)
+            .eq('status', 'pending')
+          return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: 'Transaction not found (>24h old)' }
+        }
+        console.log(`[reverify] ${payment.tx_ref} not found but only ${ageHours.toFixed(1)}h old, leaving as pending`)
+        return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'still_pending', detail: `Transaction not found (${ageHours.toFixed(1)}h old, money may be in transit)` }
+      }
       return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: `Flutterwave HTTP ${res.status}` }
     }
     flwData = await res.json()
@@ -95,7 +125,6 @@ export async function reverifyPayment(
     return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'failed', detail: `Amount mismatch: ${flwAmount} < ${expectedAmountNaira}` }
   }
 
-  // Atomic status transition
   const flwIdToStore = flwId ? Number(flwId) : payment.flw_transaction_id
   console.log(`[reverify] ${payment.tx_ref} validation passed, updating DB...`)
   const { data: updated, error: updateError } = await supabase
@@ -120,7 +149,6 @@ export async function reverifyPayment(
     return { payment_id: payment.id, tx_ref: payment.tx_ref, result: 'success', detail: 'Already processed' }
   }
 
-  // Increment votes
   const { error: incrementError } = await supabase.rpc('increment_candidate_votes', {
     p_candidate_id: payment.candidate_id,
     p_quantity: payment.quantity,

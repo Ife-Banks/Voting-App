@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     if (body.payment_id && typeof body.payment_id === 'string') {
       const { data: payment, error } = await supabase
         .from('payments')
-        .select('id, tx_ref, flw_transaction_id, amount_kobo, candidate_id, quantity, status')
+        .select('id, tx_ref, flw_transaction_id, amount_kobo, candidate_id, quantity, status, created_at')
         .eq('id', body.payment_id)
         .single()
 
@@ -87,14 +87,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ result })
     }
 
-    // Bulk re-verify all pending payments older than 15 minutes
+    // Bulk re-verify all pending payments
     if (body.bulk === true) {
-      const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString()
       const { data: pendingPayments, error } = await supabase
         .from('payments')
-        .select('id, tx_ref, flw_transaction_id, amount_kobo, candidate_id, quantity, status')
+        .select('id, tx_ref, flw_transaction_id, amount_kobo, candidate_id, quantity, status, created_at')
         .eq('status', 'pending')
-        .lt('created_at', cutoff)
         .order('created_at', { ascending: true })
 
       if (error) {
