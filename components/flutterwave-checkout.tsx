@@ -26,17 +26,19 @@ export default function FlutterwaveCheckout({
 }) {
   const initialized = useRef(false)
 
+  const customer: { email: string; name: string; phone_number: string } = {
+    email,
+    name,
+    phone_number: (phone_number && phone_number.trim() && phone_number !== '00000000000') ? phone_number.trim() : '',
+  }
+
   const config = {
     public_key: publicKey,
     tx_ref,
     amount: amount_naira,
     currency: 'NGN',
     payment_options,
-    customer: {
-      email,
-      name,
-      phone_number,
-    },
+    customer,
     customizations: {
       title: 'NASSA Student Choice Award',
       description: 'Vote for your favourite candidate',

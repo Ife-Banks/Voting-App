@@ -79,7 +79,6 @@ export default function VotePage() {
     setProcessing(false)
     const pc = paymentConfig
     if (!pc) return
-    const qty = quantity
     fetch(`/api/payments/verify?transaction_id=${transactionId}&reference=${pc.tx_ref}`)
       .then(r => r.json())
       .then(verifyData => {
@@ -97,7 +96,7 @@ export default function VotePage() {
         setPaymentConfig(null)
       })
       .catch(() => {
-        setResult({ success: true, message: 'Your vote has successfully been cast. Results will be displayed in due time.' })
+        setResult({ success: true, message: 'Payment received. Your vote is being processed — it may take a few minutes to confirm.' })
         setPaymentConfig(null)
       })
   }
@@ -105,6 +104,7 @@ export default function VotePage() {
   function onCheckoutClose() {
     setProcessing(false)
     setPaymentConfig(null)
+    setResult({ success: false, message: 'Payment was cancelled. Your vote has not been cast.' })
   }
 
   async function handleInitiate() {
@@ -295,7 +295,7 @@ export default function VotePage() {
                     className="input-field w-full px-4 py-3 rounded-xl text-sm" placeholder="email@example.com" />
                 </div>
                 <div>
-                  <label className="block text-xs mb-2" style={{ color: 'rgba(255,255,255,0.55)' }}>Phone Number</label>
+                  <label className="block text-xs mb-2" style={{ color: 'rgba(255,255,255,0.55)' }}>Phone Number <span style={{ color: 'rgba(255,255,255,0.3)' }}>(optional)</span></label>
                   <input type="tel" value={voterPhone} onChange={e => setVoterPhone(e.target.value)}
                     className="input-field w-full px-4 py-3 rounded-xl text-sm" placeholder="08012345678" />
                 </div>
@@ -341,7 +341,7 @@ export default function VotePage() {
           publicKey={publicKey}
           email={voterEmail.trim()}
           name={voterName.trim()}
-          phone_number={voterPhone.trim() || '00000000000'}
+          phone_number={voterPhone.trim() || ''}
           amount_naira={paymentConfig.amount_naira}
           tx_ref={paymentConfig.tx_ref}
           payment_options={paymentConfig.payment_options}

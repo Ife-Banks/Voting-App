@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       amount_naira: amountKobo / 100,
       tx_ref: txRef,
-      payment_options: 'card,ussd,banktransfer,mobilemoney',
+      payment_options: 'card,banktransfer',
     })
   } catch (err) {
     logError('payments', 'initiate', err instanceof Error ? err.message : 'unknown')
