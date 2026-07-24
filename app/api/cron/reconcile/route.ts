@@ -3,6 +3,8 @@ import { createAdminClient } from '@/lib/supabase-server'
 import { reverifyPayment } from '@/lib/reverify'
 import { logError } from '@/lib/logger'
 
+export const maxDuration = 30
+
 export async function GET(req: NextRequest) {
   // Protect with CRON_SECRET — Vercel Cron sends Authorization: Bearer <CRON_SECRET>
   const authHeader = req.headers.get('authorization')
@@ -22,6 +24,7 @@ export async function GET(req: NextRequest) {
       .eq('status', 'pending')
       .lt('created_at', cutoff)
       .order('created_at', { ascending: true })
+      .limit(25)
 
     if (error) {
       logError('cron-reconcile', 'query', error.message)
